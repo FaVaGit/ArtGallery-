@@ -51,6 +51,48 @@ GitHub Pages hosts only static files. The backend API cannot run on GitHub Pages
 
 For production, keep frontend on GitHub Pages and deploy backend separately (for example Render, Railway, Azure Web App, or VPS), then configure frontend API base URL.
 
+## Google Drive Backend Integration
+
+Google Drive service endpoints are now available under `/api/drive`.
+
+### Credentials
+
+Create backend environment file from `backend/.env.example` and set:
+
+- `GOOGLE_DRIVE_ROOT_FOLDER_ID`: root folder used by the gallery.
+- Credentials using one of these options:
+  - `GOOGLE_SERVICE_ACCOUNT_JSON`
+  - `GOOGLE_CLIENT_EMAIL` and `GOOGLE_PRIVATE_KEY`
+
+Service account access requirement:
+
+- Share your target Google Drive folder with the service account email.
+
+### Available Drive Endpoints
+
+- `GET /api/drive/status`
+  - Validate Drive credentials and access.
+- `GET /api/drive/folders?parentId=<id>`
+  - List child folders for a parent.
+  - If `parentId` is omitted, `GOOGLE_DRIVE_ROOT_FOLDER_ID` is used.
+- `GET /api/drive/items?folderId=<id>&pageSize=100&pageToken=<token>&search=<name>`
+  - List files/folders inside a folder.
+  - If `folderId` is omitted, `GOOGLE_DRIVE_ROOT_FOLDER_ID` is used.
+- `POST /api/drive/folders`
+  - Create folder.
+  - Body: `{ "name": "Project A", "parentId": "..." }` (`parentId` optional if root configured).
+- `PATCH /api/drive/items/:itemId/rename`
+  - Rename file or folder.
+  - Body: `{ "name": "New Name" }`
+- `PATCH /api/drive/items/:itemId/move`
+  - Move file or folder.
+  - Body: `{ "targetParentId": "..." }`
+- `POST /api/drive/items/copy`
+  - Copy file or folder.
+  - Body: `{ "itemId": "...", "targetParentId": "...", "name": "Optional copy name" }`
+- `DELETE /api/drive/items/:itemId`
+  - Delete file or folder.
+
 ## Next Implementation Steps
 
 1. Add Google Drive integration for album/folder-driven galleries.
