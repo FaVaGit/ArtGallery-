@@ -13,6 +13,18 @@ From project root:
   - Frontend default URL: http://localhost:5173
   - Backend health endpoint: http://localhost:4000/api/health
 
+## Frontend UI
+
+Implemented pages:
+
+- `/`: customer portfolio browsing page (folders and media grid)
+- `/admin`: admin login and Drive content management panel
+
+Frontend API base URL:
+
+- Optional env var in frontend `.env`: `VITE_API_BASE_URL`
+- Default fallback: `http://localhost:4000/api`
+
 - npm run build
   - Builds frontend and backend.
 
