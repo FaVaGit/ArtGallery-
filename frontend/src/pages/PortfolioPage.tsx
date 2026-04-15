@@ -1,11 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ApiError } from "../api/client";
+import type { AppConfig } from "../config/appConfig";
+import type { AppMessages } from "../i18n/messages";
 import { getDriveStatus, listItems } from "../api/driveApi";
 import { GalleryGrid } from "../components/GalleryGrid";
 import type { DriveItem } from "../types";
 
-export function PortfolioPage() {
+interface PortfolioPageProps {
+  config: AppConfig;
+  messages: AppMessages;
+}
+
+export function PortfolioPage({ config, messages }: PortfolioPageProps) {
   const [items, setItems] = useState<DriveItem[]>([]);
   const [folderId, setFolderId] = useState("");
   const [search, setSearch] = useState("");
@@ -14,27 +21,30 @@ export function PortfolioPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const activeFolderLabel = useMemo(() => (folderId ? folderId : "Root configured on backend"), [folderId]);
+  const activeFolderLabel = useMemo(
+    () => (folderId || config.defaultFolderId ? folderId || config.defaultFolderId : messages.portfolio.rootConfigured),
+    [folderId, config.defaultFolderId, messages.portfolio.rootConfigured],
+  );
 
-  async function loadData(nextFolderId?: string, nextSearch?: string) {
+  const loadData = useCallback(async (nextFolderId?: string, nextSearch?: string) => {
     setLoading(true);
     setError(null);
 
     try {
       const response = await listItems({
-        folderId: nextFolderId || undefined,
+        folderId: nextFolderId || config.defaultFolderId || undefined,
         search: nextSearch || undefined,
         pageSize: 200,
       });
 
       setItems(response.items);
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : "Unable to load gallery";
+      const message = err instanceof ApiError ? err.message : messages.portfolio.unableToLoad;
       setError(message);
     } finally {
       setLoading(false);
     }
-  }
+  }, [config.defaultFolderId, messages.portfolio.unableToLoad]);
 
   useEffect(() => {
     const run = async () => {
@@ -48,7 +58,7 @@ export function PortfolioPage() {
 
     run().catch(() => setStatus("error"));
     loadData().catch(() => undefined);
-  }, []);
+  }, [loadData]);
 
   function openFolder(item: DriveItem) {
     if (item.itemType !== "folder") {
@@ -74,14 +84,12 @@ export function PortfolioPage() {
     <section className="page">
       <header className="hero-panel">
         <div>
-          <p className="eyebrow">Customer Showcase</p>
-          <h1>Decorative Facades and Roofing Portfolio</h1>
-          <p className="subtitle">
-            Explore completed exterior projects with image quality optimized for mobile, tablet, and desktop.
-          </p>
+          <p className="eyebrow">{messages.portfolio.eyebrow}</p>
+          <h1>{messages.portfolio.title}</h1>
+          <p className="subtitle">{messages.portfolio.subtitle}</p>
         </div>
         <div className={`status-pill ${status}`}>
-          Drive connection: {status === "checking" ? "Checking" : status === "ok" ? "Online" : "Error"}
+          {messages.portfolio.driveConnection}: {status === "checking" ? messages.portfolio.checking : status === "ok" ? messages.portfolio.online : messages.portfolio.error}
         </div>
       </header>
 
@@ -90,21 +98,29 @@ export function PortfolioPage() {
           <input
             value={folderId}
             onChange={(event) => setFolderId(event.target.value)}
-            placeholder="Folder ID (optional)"
+            placeholder={messages.common.folderIdOptional}
           />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by name" />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={messages.common.searchByName}
+          />
           <button type="button" onClick={() => loadData(folderId, search)} disabled={loading}>
-            {loading ? "Loading..." : "Refresh"}
+            {loading ? messages.common.loading : messages.common.refresh}
           </button>
           <button type="button" onClick={goBack} disabled={!history.length || loading} className="ghost">
-            Back Folder
+            {messages.portfolio.backFolder}
           </button>
         </div>
-        <p className="path-label">Current folder: {activeFolderLabel}</p>
+        <p className="path-label">{messages.portfolio.currentFolder}: {activeFolderLabel}</p>
       </section>
 
       {error ? <p className="error-banner">{error}</p> : null}
-      <GalleryGrid items={items} onOpenFolder={openFolder} />
+      <GalleryGrid
+        items={items}
+        labels={messages.common}
+        onOpenFolder={openFolder}
+      />
     </section>
   );
 }

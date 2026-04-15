@@ -1,14 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ApiError } from "../api/client";
-import {
-  copyItem,
-  createFolder,
-  deleteItem,
-  listItems,
-  moveItem,
-  renameItem,
-} from "../api/driveApi";
+import type { AppConfig } from "../config/appConfig";
+import type { AppMessages } from "../i18n/messages";
+import { copyItem, createFolder, deleteItem, listItems, moveItem, renameItem } from "../api/driveApi";
 import { AdminActions } from "../components/AdminActions";
 import { GalleryGrid } from "../components/GalleryGrid";
 import type { AuthUser, DriveItem } from "../types";
@@ -16,14 +11,18 @@ import type { AuthUser, DriveItem } from "../types";
 interface AdminPageProps {
   token: string | null;
   user: AuthUser | null;
+  messages: AppMessages;
+  config: AppConfig;
+  onConfigChange: (config: AppConfig) => void;
   onLogin: (username: string, password: string) => Promise<void>;
 }
 
-export function AdminPage({ token, user, onLogin }: AdminPageProps) {
+export function AdminPage({ token, user, messages, config, onConfigChange, onLogin }: AdminPageProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [folderId, setFolderId] = useState("");
   const [search, setSearch] = useState("");
+  const [configDraft, setConfigDraft] = useState<AppConfig>(config);
   const [items, setItems] = useState<DriveItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<DriveItem | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,13 +31,17 @@ export function AdminPage({ token, user, onLogin }: AdminPageProps) {
 
   const isAdmin = user?.role === "admin";
 
+  useEffect(() => {
+    setConfigDraft(config);
+  }, [config]);
+
   async function loadData(nextFolderId = folderId, nextSearch = search) {
     setLoading(true);
     setError(null);
 
     try {
       const response = await listItems({
-        folderId: nextFolderId || undefined,
+        folderId: nextFolderId || config.defaultFolderId || undefined,
         search: nextSearch || undefined,
         pageSize: 200,
       });
@@ -46,7 +49,7 @@ export function AdminPage({ token, user, onLogin }: AdminPageProps) {
       setItems(response.items);
       setSelectedItem(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Unable to load Drive items");
+      setError(err instanceof ApiError ? err.message : messages.admin.loadDriveFailed);
     } finally {
       setLoading(false);
     }
@@ -54,7 +57,7 @@ export function AdminPage({ token, user, onLogin }: AdminPageProps) {
 
   async function perform(action: () => Promise<unknown>, successMessage: string) {
     if (!token) {
-      setError("Please login first");
+      setError(messages.admin.pleaseLogin);
       return;
     }
 
@@ -65,8 +68,21 @@ export function AdminPage({ token, user, onLogin }: AdminPageProps) {
       setFeedback(successMessage);
       await loadData();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Action failed");
+      setError(err instanceof ApiError ? err.message : messages.admin.actionFailed);
     }
+  }
+
+  function saveConfiguration() {
+    const normalized: AppConfig = {
+      brandName: configDraft.brandName.trim() || config.brandName,
+      apiBaseUrl: configDraft.apiBaseUrl.trim(),
+      defaultFolderId: configDraft.defaultFolderId.trim(),
+      visibilityMode: configDraft.visibilityMode,
+    };
+
+    onConfigChange(normalized);
+    setConfigDraft(normalized);
+    setFeedback(messages.admin.configSaved);
   }
 
   if (!token || !user) {
@@ -74,9 +90,9 @@ export function AdminPage({ token, user, onLogin }: AdminPageProps) {
       <section className="page">
         <header className="hero-panel">
           <div>
-            <p className="eyebrow">Administrator Access</p>
-            <h1>Manage Portfolio Content</h1>
-            <p className="subtitle">Login as admin or viewer. Only admin can modify Google Drive content.</p>
+            <p className="eyebrow">{messages.admin.accessEyebrow}</p>
+            <h1>{messages.admin.accessTitle}</h1>
+            <p className="subtitle">{messages.admin.accessSubtitle}</p>
           </div>
         </header>
 
@@ -85,7 +101,7 @@ export function AdminPage({ token, user, onLogin }: AdminPageProps) {
           onSubmit={(event) => {
             event.preventDefault();
             onLogin(username, password).catch((err: unknown) => {
-              const message = err instanceof ApiError ? err.message : "Login failed";
+              const message = err instanceof ApiError ? err.message : messages.admin.loginFailed;
               setError(message);
             });
           }}
@@ -93,17 +109,17 @@ export function AdminPage({ token, user, onLogin }: AdminPageProps) {
           <input
             value={username}
             onChange={(event) => setUsername(event.target.value)}
-            placeholder="Username"
+            placeholder={messages.admin.username}
             autoComplete="username"
           />
           <input
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="Password"
+            placeholder={messages.admin.password}
             autoComplete="current-password"
           />
-          <button type="submit">Login</button>
+          <button type="submit">{messages.admin.login}</button>
         </form>
         {error ? <p className="error-banner">{error}</p> : null}
       </section>
@@ -114,23 +130,69 @@ export function AdminPage({ token, user, onLogin }: AdminPageProps) {
     <section className="page">
       <header className="hero-panel">
         <div>
-          <p className="eyebrow">Admin Workspace</p>
-          <h1>Drive Content Management</h1>
-          <p className="subtitle">Folder operations are protected by role-based authorization.</p>
+          <p className="eyebrow">{messages.admin.workspaceEyebrow}</p>
+          <h1>{messages.admin.workspaceTitle}</h1>
+          <p className="subtitle">{messages.admin.workspaceSubtitle}</p>
         </div>
-        <span className={`status-pill ${isAdmin ? "ok" : "error"}`}>Role: {user.role}</span>
+        <span className={`status-pill ${isAdmin ? "ok" : "error"}`}>
+          {messages.admin.role}: {user.role}
+        </span>
       </header>
+
+      <section className="admin-actions">
+        <h2>{messages.admin.configTitle}</h2>
+        <div className="inline-fields">
+          <input
+            value={configDraft.brandName}
+            onChange={(event) => setConfigDraft((prev) => ({ ...prev, brandName: event.target.value }))}
+            placeholder={messages.admin.brandName}
+          />
+          <input
+            value={configDraft.apiBaseUrl}
+            onChange={(event) => setConfigDraft((prev) => ({ ...prev, apiBaseUrl: event.target.value }))}
+            placeholder={messages.admin.apiBaseUrl}
+          />
+          <input
+            value={configDraft.defaultFolderId}
+            onChange={(event) => setConfigDraft((prev) => ({ ...prev, defaultFolderId: event.target.value }))}
+            placeholder={messages.admin.defaultFolderId}
+          />
+          <select
+            value={configDraft.visibilityMode}
+            onChange={(event) =>
+              setConfigDraft((prev) => ({
+                ...prev,
+                visibilityMode: event.target.value === "private" ? "private" : "public",
+              }))
+            }
+          >
+            <option value="public">
+              {messages.admin.visibilityMode}: {messages.admin.publicMode}
+            </option>
+            <option value="private">
+              {messages.admin.visibilityMode}: {messages.admin.privateMode}
+            </option>
+          </select>
+        </div>
+        <button type="button" onClick={saveConfiguration}>
+          {messages.admin.saveConfig}
+        </button>
+      </section>
 
       <section className="filters-panel">
         <div className="inline-fields">
           <input
             value={folderId}
             onChange={(event) => setFolderId(event.target.value)}
-            placeholder="Folder ID (optional)"
+            placeholder={messages.common.folderIdOptional}
           />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by name" />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={messages.common.searchByName}
+          />
           <button type="button" onClick={() => loadData()} disabled={loading}>
-            {loading ? "Loading..." : "Load Items"}
+            {loading ? messages.common.loading : messages.admin.loadItems}
           </button>
         </div>
       </section>
@@ -140,6 +202,7 @@ export function AdminPage({ token, user, onLogin }: AdminPageProps) {
 
       <GalleryGrid
         items={items}
+        labels={messages.common}
         selectedId={selectedItem?.id}
         onOpenFolder={(item) => {
           if (item.itemType !== "folder") {
@@ -154,21 +217,22 @@ export function AdminPage({ token, user, onLogin }: AdminPageProps) {
 
       {isAdmin ? (
         <AdminActions
+          labels={messages.actions}
           selectedItem={selectedItem}
           onCreateFolder={(name, parentId) =>
-            perform(() => createFolder(token, name, parentId), `Folder "${name}" created.`)
+            perform(() => createFolder(token, name, parentId), messages.actions.folderCreated.replace("{name}", name))
           }
-          onRename={(itemId, name) => perform(() => renameItem(token, itemId, name), "Item renamed.")}
+          onRename={(itemId, name) => perform(() => renameItem(token, itemId, name), messages.actions.itemRenamed)}
           onMove={(itemId, targetParentId) =>
-            perform(() => moveItem(token, itemId, targetParentId), "Item moved.")
+            perform(() => moveItem(token, itemId, targetParentId), messages.actions.itemMoved)
           }
           onCopy={(itemId, targetParentId, name) =>
-            perform(() => copyItem(token, itemId, targetParentId, name), "Item copied.")
+            perform(() => copyItem(token, itemId, targetParentId, name), messages.actions.itemCopied)
           }
-          onDelete={(itemId) => perform(() => deleteItem(token, itemId), "Item deleted.")}
+          onDelete={(itemId) => perform(() => deleteItem(token, itemId), messages.actions.itemDeleted)}
         />
       ) : (
-        <p className="error-banner">Viewer role is read-only. Login with admin role for write actions.</p>
+        <p className="error-banner">{messages.admin.viewerReadOnly}</p>
       )}
     </section>
   );

@@ -55,6 +55,21 @@
   gap: 0.6rem;
 }
 
+.language-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--ink-700);
+}
+
+.language-box select {
+  border-radius: 0.5rem;
+  border: 1px solid var(--line);
+  padding: 0.3rem 0.45rem;
+  background: white;
+}
+
 .session-chip {
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
@@ -234,6 +249,7 @@ main {
 }
 
 input,
+select,
 button,
 .button-link {
   border-radius: 0.62rem;

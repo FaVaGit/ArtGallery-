@@ -2,6 +2,14 @@ import type { DriveItem } from "../types";
 
 interface GalleryGridProps {
   items: DriveItem[];
+  labels: {
+    noContent: string;
+    folder: string;
+    file: string;
+    updated: string;
+    open: string;
+    view: string;
+  };
   selectedId?: string;
   onOpenFolder: (item: DriveItem) => void;
   onSelectItem?: (item: DriveItem) => void;
@@ -21,9 +29,9 @@ function formatDate(value: string | null): string {
   return date.toLocaleDateString();
 }
 
-export function GalleryGrid({ items, selectedId, onOpenFolder, onSelectItem }: GalleryGridProps) {
+export function GalleryGrid({ items, labels, selectedId, onOpenFolder, onSelectItem }: GalleryGridProps) {
   if (!items.length) {
-    return <p className="empty">No content found in this folder.</p>;
+    return <p className="empty">{labels.noContent}</p>;
   }
 
   return (
@@ -47,18 +55,18 @@ export function GalleryGrid({ items, selectedId, onOpenFolder, onSelectItem }: G
 
             <div className="meta">
               <h3 title={item.name}>{item.name}</h3>
-              <p>{isFolder ? "Folder" : "File"}</p>
-              <p>Updated: {formatDate(item.modifiedTime)}</p>
+              <p>{isFolder ? labels.folder : labels.file}</p>
+              <p>{labels.updated}: {formatDate(item.modifiedTime)}</p>
             </div>
 
             <div className="actions">
               {isFolder ? (
                 <button type="button" onClick={() => onOpenFolder(item)}>
-                  Open
+                  {labels.open}
                 </button>
               ) : (
                 <a href={item.webViewLink ?? "#"} target="_blank" rel="noreferrer" className="button-link">
-                  View
+                  {labels.view}
                 </a>
               )}
             </div>

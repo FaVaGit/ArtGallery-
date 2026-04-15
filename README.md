@@ -20,10 +20,20 @@ Implemented pages:
 - `/`: customer portfolio browsing page (folders and media grid)
 - `/admin`: admin login and Drive content management panel
 
+Additional capabilities:
+
+- Language switch (EN/IT) in top navigation.
+- Runtime configuration panel in admin page for:
+  - Brand name
+  - Frontend API base URL
+  - Default folder ID
+  - Visibility mode (public/private)
+
 Frontend API base URL:
 
 - Optional env var in frontend `.env`: `VITE_API_BASE_URL`
 - Default fallback: `http://localhost:4000/api`
+- Can be overridden at runtime from Admin configuration panel.
 
 - npm run build
   - Builds frontend and backend.

@@ -1,6 +1,16 @@
-const API_BASE_URL =
+const API_BASE_ENV =
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ??
   "http://localhost:4000/api";
+
+let runtimeApiBaseUrl = "";
+
+export function setApiBaseUrl(apiBaseUrl: string): void {
+  runtimeApiBaseUrl = apiBaseUrl.trim().replace(/\/$/, "");
+}
+
+export function getApiBaseUrl(): string {
+  return runtimeApiBaseUrl || API_BASE_ENV;
+}
 
 interface ApiRequestOptions extends RequestInit {
   token?: string;
@@ -18,8 +28,9 @@ export class ApiError extends Error {
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const { token, headers, ...rest } = options;
+  const apiBaseUrl = getApiBaseUrl();
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
     ...rest,
     headers: {
       "Content-Type": "application/json",
@@ -47,5 +58,3 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 
   return (await response.json()) as T;
 }
-
-export { API_BASE_URL };
