@@ -55,6 +55,35 @@ For production, keep frontend on GitHub Pages and deploy backend separately (for
 
 Google Drive service endpoints are now available under `/api/drive`.
 
+### Authentication and Roles
+
+Backend now supports JWT authentication with roles:
+
+- `admin`: can perform Drive write operations (create, rename, move, copy, delete)
+- `viewer`: read-only access
+
+Required env vars in `backend/.env`:
+
+- `AUTH_JWT_SECRET`
+- `AUTH_USERS_JSON` (JSON array of users with username, password, role)
+- `AUTH_JWT_EXPIRES_IN` (optional, default `12h`)
+
+Auth endpoints:
+
+- `POST /api/auth/login`
+  - Body: `{ "username": "admin", "password": "..." }`
+  - Returns JWT token and user role.
+- `GET /api/auth/me`
+  - Requires header: `Authorization: Bearer <token>`
+
+Drive write endpoints require `admin` token:
+
+- `POST /api/drive/folders`
+- `PATCH /api/drive/items/:itemId/rename`
+- `PATCH /api/drive/items/:itemId/move`
+- `POST /api/drive/items/copy`
+- `DELETE /api/drive/items/:itemId`
+
 ### Credentials
 
 Create backend environment file from `backend/.env.example` and set:

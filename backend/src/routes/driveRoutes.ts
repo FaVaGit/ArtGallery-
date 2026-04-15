@@ -11,6 +11,7 @@ import {
   moveItem,
   renameItem,
 } from "../services/googleDriveService.js";
+import { requireAuth, requireRole } from "../middleware/authMiddleware.js";
 import { HttpError } from "../utils/httpError.js";
 
 const router = Router();
@@ -47,6 +48,14 @@ const copyItemSchema = z.object({
   targetParentId: z.string().min(1),
   name: z.string().min(1).optional(),
 });
+
+function getItemIdParam(param: string | string[] | undefined): string {
+  if (!param || Array.isArray(param)) {
+    throw new HttpError(400, "itemId path parameter is required");
+  }
+
+  return param;
+}
 
 function getRequiredRootFolderId(): string {
   const rootFolderId = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
@@ -115,7 +124,7 @@ router.get("/items", async (req, res, next) => {
   }
 });
 
-router.post("/folders", async (req, res, next) => {
+router.post("/folders", requireAuth, requireRole(["admin"]), async (req, res, next) => {
   try {
     const parsed = createFolderSchema.safeParse(req.body);
 
@@ -133,8 +142,9 @@ router.post("/folders", async (req, res, next) => {
   }
 });
 
-router.patch("/items/:itemId/rename", async (req, res, next) => {
+router.patch("/items/:itemId/rename", requireAuth, requireRole(["admin"]), async (req, res, next) => {
   try {
+    const itemId = getItemIdParam(req.params.itemId);
     const bodyParsed = renameItemSchema.safeParse(req.body);
 
     if (!bodyParsed.success) {
@@ -142,7 +152,7 @@ router.patch("/items/:itemId/rename", async (req, res, next) => {
     }
 
     const data = await renameItem({
-      itemId: req.params.itemId,
+      itemId,
       name: bodyParsed.data.name,
     });
 
@@ -152,8 +162,9 @@ router.patch("/items/:itemId/rename", async (req, res, next) => {
   }
 });
 
-router.patch("/items/:itemId/move", async (req, res, next) => {
+router.patch("/items/:itemId/move", requireAuth, requireRole(["admin"]), async (req, res, next) => {
   try {
+    const itemId = getItemIdParam(req.params.itemId);
     const bodyParsed = moveItemSchema.safeParse(req.body);
 
     if (!bodyParsed.success) {
@@ -161,7 +172,7 @@ router.patch("/items/:itemId/move", async (req, res, next) => {
     }
 
     const data = await moveItem({
-      itemId: req.params.itemId,
+      itemId,
       targetParentId: bodyParsed.data.targetParentId,
     });
 
@@ -171,7 +182,7 @@ router.patch("/items/:itemId/move", async (req, res, next) => {
   }
 });
 
-router.post("/items/copy", async (req, res, next) => {
+router.post("/items/copy", requireAuth, requireRole(["admin"]), async (req, res, next) => {
   try {
     const parsed = copyItemSchema.safeParse(req.body);
 
@@ -186,9 +197,10 @@ router.post("/items/copy", async (req, res, next) => {
   }
 });
 
-router.delete("/items/:itemId", async (req, res, next) => {
+router.delete("/items/:itemId", requireAuth, requireRole(["admin"]), async (req, res, next) => {
   try {
-    await deleteItem(req.params.itemId);
+    const itemId = getItemIdParam(req.params.itemId);
+    await deleteItem(itemId);
     res.status(204).send();
   } catch (error) {
     next(error);

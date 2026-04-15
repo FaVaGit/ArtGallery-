@@ -2,6 +2,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 
+import { authRouter } from "./routes/authRoutes.js";
 import { driveRouter } from "./routes/driveRoutes.js";
 import { HttpError } from "./utils/httpError.js";
 
@@ -17,6 +18,7 @@ app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", service: "artgallery-backend" });
 });
 
+app.use("/api/auth", authRouter);
 app.use("/api/drive", driveRouter);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
