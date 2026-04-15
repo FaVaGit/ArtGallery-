@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -28,10 +28,12 @@ jobs:
         run: npm ci
 
       - name: Install frontend dependencies
-        run: npm --prefix frontend ci
+        working-directory: frontend
+        run: npm ci
 
       - name: Install backend dependencies
-        run: npm --prefix backend ci
+        working-directory: backend
+        run: npm ci
 
       - name: Lint frontend
         run: npm run lint
