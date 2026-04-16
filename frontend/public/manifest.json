@@ -1,0 +1,21 @@
+{
+  "name": "Debora Vacchino — Art Gallery",
+  "short_name": "ArtGallery",
+  "description": "Decorative Facades & Mural Restoration Portfolio",
+  "theme_color": "#8b6f4e",
+  "background_color": "#faf7f2",
+  "display": "standalone",
+  "start_url": ".",
+  "icons": [
+    {
+      "src": "pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
