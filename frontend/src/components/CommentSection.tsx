@@ -64,7 +64,7 @@ export function CommentSection({ comments, onPost, onDelete, canComment, current
             <div key={c.id} className="comment-item">
               <div className="comment-item-body">
                 <div className="comment-item-meta">
-                  <strong>{c.username}</strong> · <time dateTime={c.created_at} title={new Date(c.created_at).toLocaleString()}>{relativeTime(c.created_at)}</time>
+                  <strong>{c.username}</strong> · <time dateTime={c.created_at}>{relativeTime(c.created_at)}</time>
                 </div>
                 <p className="comment-item-text">{c.text}</p>
               </div>

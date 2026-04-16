@@ -61,7 +61,7 @@ export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ type: "all", sortBy: "name", sortOrder: "asc" });
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const items = applyClientFilters(rawItems, filters);
 
@@ -250,7 +250,6 @@ export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
                   autoFocus
                   value={search}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") loadData(folderId, search).catch(() => undefined); }}
                   onBlur={() => { if (!search) setSearchOpen(false); }}
                   placeholder={messages.portfolio.searchPlaceholder}
                 />

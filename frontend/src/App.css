@@ -30,7 +30,7 @@
   justify-content: space-between;
   gap: var(--space-m);
   padding: var(--space-s) var(--space-l);
-  height: 56px;
+  height: var(--top-nav-height);
   border-bottom: 1px solid var(--border-default);
   background: var(--bg-acrylic);
   backdrop-filter: saturate(180%) blur(24px);
@@ -904,7 +904,7 @@ button:disabled {
   border-radius: var(--radius-l);
   box-shadow: var(--shadow-2);
   position: sticky;
-  top: 56px;
+  top: var(--top-nav-height);
   z-index: 40;
 }
 
@@ -1925,7 +1925,7 @@ button:disabled {
 
   .top-nav {
     flex-wrap: nowrap;
-    height: 56px;
+    height: var(--top-nav-height);
     position: relative;
   }
 }

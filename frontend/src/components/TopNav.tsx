@@ -112,10 +112,10 @@ export function TopNav({ brandName, user, language, themeMode, labels }: TopNavP
       </Link>
 
       <nav aria-label="Main navigation">
-        <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")} aria-current={undefined}>
+        <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")}>
           {labels.portfolio}
         </NavLink>
-        <NavLink to="/admin" className={({ isActive }) => (isActive ? "active" : "")} aria-current={undefined}>
+        <NavLink to="/admin" className={({ isActive }) => (isActive ? "active" : "")}>
           {labels.admin}
         </NavLink>
       </nav>

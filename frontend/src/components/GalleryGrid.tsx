@@ -85,7 +85,8 @@ export function GalleryGrid({ items, labels, shareLabels, selectedId, folderPrev
             className={`gallery-card ${selectedId === item.id ? "selected" : ""}`}
             style={{ "--i": index } as React.CSSProperties}
             onClick={() => { if (isFolder) { onOpenFolder(item); } else { onViewFile?.(item); } }}
-            role="listitem"
+            role="button"
+            aria-label={`${isFolder ? labels.folder : labels.file}: ${item.name}`}
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isFolder) { onOpenFolder(item); } else { onViewFile?.(item); } } }}
           >

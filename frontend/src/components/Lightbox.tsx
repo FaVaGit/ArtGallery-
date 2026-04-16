@@ -51,8 +51,20 @@ export function Lightbox({ item, onClose, messages, token, username, isAdmin, it
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") handleClose();
-      if (e.key === "ArrowLeft" && hasPrev) navigateTo("prev");
-      if (e.key === "ArrowRight" && hasNext) navigateTo("next");
+      if (e.key === "ArrowLeft" && hasPrev && onNavigate) {
+        const idx = fileIndex - 1;
+        if (idx >= 0 && idx < fileItems.length) {
+          setImgLoaded(false);
+          onNavigate(fileItems[idx]);
+        }
+      }
+      if (e.key === "ArrowRight" && hasNext && onNavigate) {
+        const idx = fileIndex + 1;
+        if (idx >= 0 && idx < fileItems.length) {
+          setImgLoaded(false);
+          onNavigate(fileItems[idx]);
+        }
+      }
 
       // Focus trapping
       if (e.key === "Tab" && dialogRef.current) {
@@ -76,7 +88,7 @@ export function Lightbox({ item, onClose, messages, token, username, isAdmin, it
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [onClose, hasPrev, hasNext, fileItems, fileIndex],
+    [onClose, hasPrev, hasNext, fileItems, fileIndex, onNavigate],
   );
 
   useEffect(() => {
