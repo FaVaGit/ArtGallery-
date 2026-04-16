@@ -1,8 +1,11 @@
 # ArtGallery Prototype
 
-Full-stack prototype with:
-- Frontend: React + Vite + TypeScript
-- Backend: Node.js + Express + TypeScript
+Full-stack portfolio application for decorative facades and roofing projects.
+
+- **Frontend**: React + Vite + TypeScript, Fluent/Modern UI design, Fabric.js canvas gallery
+- **Backend**: Node.js + Express + TypeScript, Google Drive integration
+- **Architecture**: Event-Driven (typed EventBus singleton)
+- **Live site**: https://favagit.github.io/ArtGallery-/
 
 ## Scripts
 
@@ -49,11 +52,16 @@ Frontend API base URL:
 
 ## Current Status
 
-- React stack scaffolded and working
-- Backend API base running and compiled
-- VS Code task created: Run ArtGallery Prototype
-- CI workflow added: lint + full build on push/PR to main
-- GitHub Pages deployment workflow added for frontend
+- React + Vite + TypeScript frontend with Fluent/Modern UI design
+- Event-Driven Architecture with typed EventBus
+- Fabric.js interactive canvas gallery (zoom, pan, selection)
+- Dual view modes: grid and canvas
+- JWT auth with admin/viewer roles
+- i18n support (EN/IT)
+- Runtime configuration panel
+- CI workflow: lint + build on push/PR to main
+- GitHub Pages deployment: automated on push to main
+- Backend API with Google Drive integration
 
 ## GitHub Pages Deployment
 
