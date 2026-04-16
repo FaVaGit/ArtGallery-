@@ -1,38 +1,48 @@
 /* ══════════════════════════════════════════════════════════
- *  ArtGallery – Fluent / Modern UI Design Tokens & Base
+ *  Debora Vacchino — Decoratrice & Restauratrice Murale
+ *  Design Tokens & Base — Warm Italian Atelier
  * ══════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Colour Tokens  (Fluent-inspired) ────────── */
-  --bg-base: #f5f5f5;
+  /* ── Colour Palette (Warm Ligurian Fresco) ─── */
+  --bg-base: #faf7f2;
   --bg-card: #ffffff;
-  --bg-acrylic: rgba(255, 255, 255, 0.72);
+  --bg-acrylic: rgba(250, 247, 242, 0.82);
   --bg-elevated: #ffffff;
-  --bg-subtle: #fafafa;
-  --bg-brand: #0078d4;
-  --bg-brand-hover: #106ebe;
-  --bg-danger: #d13438;
-  --bg-success: #107c10;
+  --bg-subtle: #f3ede4;
+  --bg-brand: #8b6f4e;
+  --bg-brand-hover: #725a3d;
+  --bg-danger: #c44d4d;
+  --bg-success: #5a8a5a;
+  --bg-hero: linear-gradient(135deg, #f5efe6 0%, #e8ddd0 40%, #d4c5b0 100%);
+  --bg-hero-overlay: linear-gradient(180deg, rgba(250,247,242,0) 60%, rgba(250,247,242,1) 100%);
 
-  --text-primary: #1b1b1f;
-  --text-secondary: #5f6368;
-  --text-tertiary: #8a8a8e;
+  --accent-gold: #c5a55a;
+  --accent-terracotta: #c47d5a;
+  --accent-sage: #8a9e7a;
+  --accent-navy: #3d4f6a;
+
+  --text-primary: #2c2418;
+  --text-secondary: #6b5e4f;
+  --text-tertiary: #9a8d7e;
   --text-on-brand: #ffffff;
-  --text-danger: #a4262c;
-  --text-success: #0b6a0b;
-  --text-link: #0078d4;
+  --text-danger: #993333;
+  --text-success: #3d6b3d;
+  --text-link: #8b6f4e;
 
-  --border-default: #e0e0e0;
-  --border-strong: #c4c4c4;
-  --border-brand: #0078d4;
+  --border-default: #e0d6c8;
+  --border-strong: #c9bca9;
+  --border-brand: #8b6f4e;
 
   /* ── Depth / Elevation ─────────────────────── */
-  --shadow-2: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
-  --shadow-4: 0 2px 4px rgba(0,0,0,0.04), 0 4px 8px rgba(0,0,0,0.08);
-  --shadow-8: 0 4px 8px rgba(0,0,0,0.04), 0 8px 16px rgba(0,0,0,0.08);
-  --shadow-16: 0 8px 16px rgba(0,0,0,0.06), 0 16px 32px rgba(0,0,0,0.1);
+  --shadow-2: 0 1px 3px rgba(44,36,24,0.06), 0 1px 2px rgba(44,36,24,0.08);
+  --shadow-4: 0 2px 8px rgba(44,36,24,0.06), 0 4px 12px rgba(44,36,24,0.08);
+  --shadow-8: 0 4px 16px rgba(44,36,24,0.08), 0 8px 24px rgba(44,36,24,0.1);
+  --shadow-16: 0 8px 32px rgba(44,36,24,0.1), 0 16px 48px rgba(44,36,24,0.12);
+  --shadow-card-hover: 0 12px 40px rgba(44,36,24,0.15), 0 4px 12px rgba(44,36,24,0.08);
 
   /* ── Typography ────────────────────────────── */
+  --font-display: "Playfair Display", "Georgia", serif;
   --font-base: "Inter", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: "Cascadia Code", "Fira Code", "Consolas", monospace;
 
@@ -43,17 +53,19 @@
   --space-l: 24px;
   --space-xl: 32px;
   --space-xxl: 48px;
+  --space-hero: 80px;
 
   /* ── Radius ────────────────────────────────── */
   --radius-s: 6px;
-  --radius-m: 10px;
-  --radius-l: 16px;
+  --radius-m: 12px;
+  --radius-l: 20px;
   --radius-full: 9999px;
 
   /* ── Motion ────────────────────────────────── */
-  --motion-fast: 120ms cubic-bezier(0.33, 0, 0.67, 1);
-  --motion-normal: 250ms cubic-bezier(0.33, 0, 0.67, 1);
-  --motion-slow: 400ms cubic-bezier(0.33, 0, 0.67, 1);
+  --motion-fast: 150ms cubic-bezier(0.2, 0, 0.38, 0.9);
+  --motion-normal: 300ms cubic-bezier(0.2, 0, 0.38, 0.9);
+  --motion-slow: 500ms cubic-bezier(0.2, 0, 0.38, 0.9);
+  --motion-elegant: 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ── Reset ──────────────────────────────────── */
@@ -64,25 +76,25 @@ html, body, #root { min-height: 100vh; }
 body {
   font-family: var(--font-base);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
   color: var(--text-primary);
   background: var(--bg-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4 { font-weight: 700; color: var(--text-primary); line-height: 1.2; }
-h1 { font-size: clamp(1.5rem, 2.4vw, 2rem); }
-h2 { font-size: clamp(1.15rem, 1.8vw, 1.5rem); }
-h3 { font-size: 1rem; font-weight: 600; }
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; color: var(--text-primary); line-height: 1.15; }
+h1 { font-size: clamp(1.8rem, 3.2vw, 2.8rem); letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.2rem, 2vw, 1.6rem); letter-spacing: -0.01em; }
+h3 { font-size: 1rem; font-weight: 600; font-family: var(--font-base); }
 
-a { color: var(--text-link); text-decoration: none; }
-a:hover { text-decoration: underline; }
+a { color: var(--text-link); text-decoration: none; transition: color var(--motion-fast); }
+a:hover { color: var(--bg-brand-hover); text-decoration: none; }
 
 img { max-width: 100%; display: block; }
 
 /* ── Scrollbar (Chromium) ───────────────────── */
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: var(--radius-full); }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }

@@ -10,7 +10,7 @@ export interface AppConfig {
 const CONFIG_STORAGE_KEY = "artgallery.app.config";
 
 export const DEFAULT_CONFIG: AppConfig = {
-  brandName: "Facciate Gallery",
+  brandName: "Debora Vacchino",
   apiBaseUrl: "",
   defaultFolderId: "",
   visibilityMode: "public",

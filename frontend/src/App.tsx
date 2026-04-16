@@ -116,6 +116,20 @@ function App() {
         </Routes>
       </main>
 
+      <footer className="site-footer">
+        <p className="footer-brand">Debora Vacchino</p>
+        <p>
+          {language === "it"
+            ? "Decoratrice e restauratrice murale — Uscio (GE), Liguria"
+            : "Mural decorator and restorer — Uscio (GE), Liguria, Italy"}
+        </p>
+        <p>
+          <a href="https://www.linkedin.com/in/debora-vacchino-422a4b52" target="_blank" rel="noreferrer">LinkedIn</a>
+          {" · "}
+          <a href="mailto:debora.uscio@live.it">debora.uscio@live.it</a>
+        </p>
+      </footer>
+
       <Toaster />
     </div>
   );
