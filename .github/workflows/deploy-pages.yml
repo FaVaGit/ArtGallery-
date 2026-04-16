@@ -40,6 +40,7 @@ jobs:
         working-directory: frontend
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_API_BASE_URL: https://artgallery-backend-rqp1.onrender.com/api
         run: npm run build
 
       - name: Setup Pages
