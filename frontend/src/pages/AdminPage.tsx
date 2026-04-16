@@ -4,8 +4,11 @@ import { ApiError } from "../api/client";
 import type { AppConfig } from "../config/appConfig";
 import type { AppMessages } from "../i18n/messages";
 import { copyItem, createFolder, deleteItem, listItems, moveItem, renameItem } from "../api/driveApi";
+import { uploadFile } from "../api/socialApi";
 import { AdminActions } from "../components/AdminActions";
 import { GalleryGrid } from "../components/GalleryGrid";
+import { FileUpload } from "../components/FileUpload";
+import { AnalyticsDashboard } from "../components/AnalyticsDashboard";
 import { eventBus, useEvent } from "../events";
 import type { AuthUser, DriveItem } from "../types";
 
@@ -71,6 +74,21 @@ export function AdminPage({ token, user, messages, config }: AdminPageProps) {
       setError(msg);
       eventBus.emit("drive:actionFailed", { message: msg });
       eventBus.emit("notify:error", { message: msg });
+    }
+  }
+
+  async function handleUpload(file: File) {
+    if (!token) throw new Error(messages.admin.pleaseLogin);
+    eventBus.emit("drive:uploadStart", { fileName: file.name });
+    try {
+      await uploadFile(token, file, folderId || config.defaultFolderId || undefined);
+      eventBus.emit("drive:uploadComplete", { fileName: file.name });
+      eventBus.emit("notify:success", { message: `${messages.upload.uploadComplete} — ${file.name}` });
+      await loadData();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : messages.upload.uploadFailed;
+      eventBus.emit("drive:uploadFailed", { fileName: file.name, error: msg });
+      throw err;
     }
   }
 
@@ -238,29 +256,51 @@ export function AdminPage({ token, user, messages, config }: AdminPageProps) {
 
       {/* ── 3. Admin actions (collapsible) ── */}
       {isAdmin ? (
-        <details className="collapsible-section">
-          <summary className="collapsible-header">
-            <h2>{messages.actions.title}</h2>
-            <span className="help-text">{messages.admin.adminActionsHelp}</span>
-          </summary>
-          <div className="collapsible-body">
-            <AdminActions
-              labels={messages.actions}
-              selectedItem={selectedItem}
-              onCreateFolder={(name, parentId) =>
-                perform(() => createFolder(token, name, parentId), messages.actions.folderCreated.replace("{name}", name))
-              }
-              onRename={(itemId, name) => perform(() => renameItem(token, itemId, name), messages.actions.itemRenamed)}
-              onMove={(itemId, targetParentId) =>
-                perform(() => moveItem(token, itemId, targetParentId), messages.actions.itemMoved)
-              }
-              onCopy={(itemId, targetParentId, name) =>
-                perform(() => copyItem(token, itemId, targetParentId, name), messages.actions.itemCopied)
-              }
-              onDelete={(itemId) => perform(() => deleteItem(token, itemId), messages.actions.itemDeleted)}
-            />
-          </div>
-        </details>
+        <>
+          <details className="collapsible-section">
+            <summary className="collapsible-header">
+              <h2>{messages.actions.title}</h2>
+              <span className="help-text">{messages.admin.adminActionsHelp}</span>
+            </summary>
+            <div className="collapsible-body">
+              <AdminActions
+                labels={messages.actions}
+                selectedItem={selectedItem}
+                onCreateFolder={(name, parentId) =>
+                  perform(() => createFolder(token, name, parentId), messages.actions.folderCreated.replace("{name}", name))
+                }
+                onRename={(itemId, name) => perform(() => renameItem(token, itemId, name), messages.actions.itemRenamed)}
+                onMove={(itemId, targetParentId) =>
+                  perform(() => moveItem(token, itemId, targetParentId), messages.actions.itemMoved)
+                }
+                onCopy={(itemId, targetParentId, name) =>
+                  perform(() => copyItem(token, itemId, targetParentId, name), messages.actions.itemCopied)
+                }
+                onDelete={(itemId) => perform(() => deleteItem(token, itemId), messages.actions.itemDeleted)}
+              />
+            </div>
+          </details>
+
+          {/* ── 4. File Upload (collapsible) ── */}
+          <details className="collapsible-section">
+            <summary className="collapsible-header">
+              <h2>{messages.upload.title}</h2>
+            </summary>
+            <div className="collapsible-body">
+              <FileUpload onUpload={handleUpload} labels={messages.upload} />
+            </div>
+          </details>
+
+          {/* ── 5. Analytics Dashboard (collapsible) ── */}
+          <details className="collapsible-section">
+            <summary className="collapsible-header">
+              <h2>{messages.analytics.title}</h2>
+            </summary>
+            <div className="collapsible-body">
+              <AnalyticsDashboard token={token} labels={messages.analytics} />
+            </div>
+          </details>
+        </>
       ) : (
         <p className="error-banner">{messages.admin.viewerReadOnly}</p>
       )}

@@ -4,9 +4,11 @@ import { ApiError } from "../api/client";
 import type { AppConfig } from "../config/appConfig";
 import type { AppMessages } from "../i18n/messages";
 import { getDriveStatus, listItems } from "../api/driveApi";
+import { trackEvent } from "../api/analyticsApi";
 import { GalleryGrid } from "../components/GalleryGrid";
 import { FabricCanvas } from "../components/FabricCanvas";
 import { Lightbox } from "../components/Lightbox";
+import { FilterBar, type FilterState } from "../components/FilterBar";
 import { eventBus, useEvent } from "../events";
 import type { DriveItem } from "../types";
 
@@ -18,8 +20,30 @@ interface PortfolioPageProps {
   token: string | null;
 }
 
-export function PortfolioPage({ config, messages }: PortfolioPageProps) {
-  const [items, setItems] = useState<DriveItem[]>([]);
+function applyClientFilters(items: DriveItem[], filters: FilterState): DriveItem[] {
+  let filtered = items;
+
+  if (filters.type === "folders") {
+    filtered = filtered.filter((i) => i.itemType === "folder");
+  } else if (filters.type === "images") {
+    filtered = filtered.filter((i) => i.itemType === "file");
+  }
+
+  filtered = [...filtered].sort((a, b) => {
+    if (filters.sortBy === "name") {
+      const cmp = a.name.localeCompare(b.name);
+      return filters.sortOrder === "desc" ? -cmp : cmp;
+    }
+    const da = new Date(a.modifiedTime ?? "").getTime() || 0;
+    const db = new Date(b.modifiedTime ?? "").getTime() || 0;
+    return filters.sortOrder === "desc" ? db - da : da - db;
+  });
+
+  return filtered;
+}
+
+export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
+  const [rawItems, setRawItems] = useState<DriveItem[]>([]);
   const [folderId, setFolderId] = useState("");
   const [search, setSearch] = useState("");
   const [history, setHistory] = useState<{ id: string; name: string }[]>([]);
@@ -31,8 +55,12 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
   const [lightboxItem, setLightboxItem] = useState<DriveItem | null>(null);
   const [folderPreviews, setFolderPreviews] = useState<Record<string, DriveItem[]>>({});
   const [currentFolderName, setCurrentFolderName] = useState("");
+  const [navDirection, setNavDirection] = useState<"enter" | "back" | null>(null);
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({ type: "all", sortBy: "name", sortOrder: "asc" });
+
+  const items = applyClientFilters(rawItems, filters);
 
   const loadData = useCallback(async (nextFolderId?: string, nextSearch?: string) => {
     setLoading(true);
@@ -47,8 +75,13 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
         pageSize: 200,
       });
 
-      setItems(response.items);
+      setRawItems(response.items);
       eventBus.emit("gallery:loaded", { items: response.items, folderId: nextFolderId });
+
+      // Track search
+      if (nextSearch) {
+        trackEvent("search", undefined, { term: nextSearch });
+      }
 
       // Load folder previews in the background
       const folders = response.items.filter((i) => i.itemType === "folder");
@@ -87,12 +120,33 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
     loadData().catch(() => undefined);
   }, [loadData]);
 
+  /* ── Deep-linking: parse ?item=<id> from hash ── */
+  useEffect(() => {
+    const hash = window.location.hash;
+    const match = hash.match(/[?&]item=([^&]+)/);
+    if (match) {
+      const itemId = decodeURIComponent(match[1]);
+      // Wait for items to load, then open lightbox
+      const checkItems = () => {
+        const found = rawItems.find((i) => i.id === itemId);
+        if (found && found.itemType === "file") {
+          setLightboxItem(found);
+        }
+      };
+      if (rawItems.length > 0) checkItems();
+      else setTimeout(checkItems, 2000);
+    }
+  }, [rawItems]);
+
   /* ── Event-driven: navigate into folder ──────── */
   useEvent("gallery:navigate", ({ item }) => {
     if (item.itemType !== "folder") return;
+    setNavDirection("enter");
+    setTimeout(() => setNavDirection(null), 400);
     setHistory((prev) => (folderId ? [...prev, { id: folderId, name: currentFolderName }] : prev));
     setCurrentFolderName(item.name);
     setFolderId(item.id);
+    trackEvent("folder_open", item.id);
     loadData(item.id, search).catch(() => undefined);
   });
 
@@ -115,6 +169,8 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
 
   function goBack() {
     eventBus.emit("gallery:back");
+    setNavDirection("back");
+    setTimeout(() => setNavDirection(null), 400);
     setHistory((prev) => {
       const clone = [...prev];
       const previous = clone.pop();
@@ -124,6 +180,8 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
       return clone;
     });
   }
+
+  const galleryTransitionClass = navDirection === "enter" ? "gallery-slide-enter" : navDirection === "back" ? "gallery-slide-back" : "";
 
   return (
     <section className="page">
@@ -159,6 +217,8 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
               Canvas
             </button>
           </div>
+
+          <FilterBar filters={filters} onChange={setFilters} labels={messages.filter} />
 
           <span className="toolbar-count">
             {items.length > 0 && messages.portfolio.itemCount.replace("{count}", String(items.length))}
@@ -239,22 +299,30 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
 
       {error ? <p className="error-banner">{error}</p> : null}
 
-      {viewMode === "canvas" ? (
-        <FabricCanvas items={items} selectedId={selectedId} labels={messages.common} folderPreviews={folderPreviews} />
-      ) : (
-        <GalleryGrid
-          items={items}
-          labels={messages.common}
-          selectedId={selectedId}
-          folderPreviews={folderPreviews}
-          onOpenFolder={openFolder}
-          onSelectItem={(item) => eventBus.emit("gallery:select", { item })}
-          onViewFile={(item) => setLightboxItem(item)}
-        />
-      )}
+      <div className={galleryTransitionClass}>
+        {viewMode === "canvas" ? (
+          <FabricCanvas items={items} selectedId={selectedId} labels={messages.common} folderPreviews={folderPreviews} />
+        ) : (
+          <GalleryGrid
+            items={items}
+            labels={messages.common}
+            shareLabels={messages.share}
+            selectedId={selectedId}
+            folderPreviews={folderPreviews}
+            onOpenFolder={openFolder}
+            onSelectItem={(item) => eventBus.emit("gallery:select", { item })}
+            onViewFile={(item) => setLightboxItem(item)}
+          />
+        )}
+      </div>
 
       {lightboxItem && (
-        <Lightbox item={lightboxItem} onClose={() => setLightboxItem(null)} closeLabel={messages.common.view} />
+        <Lightbox
+          item={lightboxItem}
+          onClose={() => setLightboxItem(null)}
+          messages={messages}
+          token={token}
+        />
       )}
     </section>
   );

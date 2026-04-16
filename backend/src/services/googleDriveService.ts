@@ -273,3 +273,30 @@ export async function getThumbnail(
 
   return { buffer: Buffer.from(arrayBuffer), mimeType: contentType };
 }
+
+export async function uploadFile(input: {
+  buffer: Buffer;
+  mimeType: string;
+  name: string;
+  parentId: string;
+}): Promise<DriveItem> {
+  const drive = getDriveClient();
+
+  const { Readable } = await import("stream");
+  const stream = Readable.from(input.buffer);
+
+  const response = await drive.files.create({
+    requestBody: {
+      name: input.name,
+      parents: [input.parentId],
+    },
+    media: {
+      mimeType: input.mimeType,
+      body: stream,
+    },
+    fields: "id,name,mimeType,webViewLink,thumbnailLink,createdTime,modifiedTime,parents",
+    supportsAllDrives: true,
+  });
+
+  return mapDriveItem(response.data);
+}

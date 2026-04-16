@@ -816,10 +816,28 @@ button:disabled {
   to { opacity: 1; }
 }
 
-.lightbox-close {
+.lightbox-header-actions {
   position: fixed;
   top: var(--space-m);
   right: var(--space-m);
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+.lightbox-header-actions .share-btn {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+.lightbox-header-actions .share-btn:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+.lightbox-close {
+  position: relative;
   z-index: 1001;
   background: rgba(255,255,255,0.15);
   border: 1px solid rgba(255,255,255,0.2);
@@ -1105,4 +1123,509 @@ button:disabled {
   main { width: 100%; padding: 0 var(--space-s); margin-top: var(--space-m); }
   .hero-panel { padding: var(--space-l); }
   .hero-panel h1 { font-size: 1.5rem; }
+}
+
+/* ══════════════════════════════════════════════════════════
+ *  Theme Toggle Button
+ * ══════════════════════════════════════════════════════════ */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+
+.theme-toggle:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+/* ══════════════════════════════════════════════════════════
+ *  Offline Banner
+ * ══════════════════════════════════════════════════════════ */
+.offline-banner {
+  background: var(--accent-terracotta);
+  color: var(--text-on-brand);
+  text-align: center;
+  padding: var(--space-xs) var(--space-m);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════════════════════════
+ *  Feature 6: Animated Transitions
+ * ══════════════════════════════════════════════════════════ */
+
+/* ── Keyframe Definitions ────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOutDown {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(20px); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes scaleOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.92); }
+}
+
+@keyframes slideLeft {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes crossfade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Gallery Card Staggered Entrance ─────────── */
+.gallery-grid .gallery-card {
+  animation: fadeInUp var(--motion-normal) ease-out both;
+  animation-delay: calc(var(--i, 0) * 50ms);
+}
+
+/* ── View Transition Wrapper ─────────────────── */
+.view-transition-enter {
+  animation: crossfade var(--motion-normal) ease-out;
+}
+
+/* ── Lightbox Animations ─────────────────────── */
+.lightbox-overlay {
+  animation: crossfade 200ms ease-out;
+}
+
+.lightbox-overlay.lightbox-closing {
+  animation: crossfade 200ms ease-in reverse forwards;
+}
+
+.lightbox-content {
+  animation: scaleIn var(--motion-normal) var(--motion-elegant);
+}
+
+.lightbox-overlay.lightbox-closing .lightbox-content {
+  animation: scaleOut 200ms ease-in forwards;
+}
+
+/* ── Folder Navigation Slide ─────────────────── */
+.gallery-slide-enter {
+  animation: slideLeft var(--motion-normal) ease-out;
+}
+
+.gallery-slide-back {
+  animation: slideRight var(--motion-normal) ease-out;
+}
+
+/* ── Respect Reduced Motion ──────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+ *  Feature 2: Filter Bar
+ * ══════════════════════════════════════════════════════════ */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  flex-wrap: wrap;
+}
+
+.filter-bar select {
+  padding: 5px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-s);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color var(--motion-fast);
+}
+
+.filter-bar select:hover {
+  border-color: var(--border-strong);
+}
+
+.filter-bar select:focus {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 1px;
+}
+
+/* ══════════════════════════════════════════════════════════
+ *  Feature 5: Share Button
+ * ══════════════════════════════════════════════════════════ */
+.share-btn-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--motion-fast);
+}
+
+.share-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  background: var(--bg-subtle);
+}
+
+.share-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 180px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-8);
+  z-index: 100;
+  overflow: hidden;
+  animation: fadeInUp 150ms ease-out;
+}
+
+.share-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--motion-fast);
+}
+
+.share-dropdown button:hover {
+  background: var(--bg-subtle);
+}
+
+.share-icon-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all var(--motion-fast);
+  opacity: 0;
+  padding: 0;
+}
+
+.gallery-card:hover .share-icon-mini {
+  opacity: 1;
+}
+
+.share-icon-mini:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+/* ══════════════════════════════════════════════════════════
+ *  Feature 1: Social — Comments & Star Rating
+ * ══════════════════════════════════════════════════════════ */
+.lightbox-social {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-m);
+  max-width: 600px;
+  margin: var(--space-m) auto 0;
+  width: 100%;
+}
+
+.star-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+.star-rating-stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.star-rating-stars button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--border-default);
+  transition: color var(--motion-fast), transform var(--motion-fast);
+}
+
+.star-rating-stars button.filled {
+  color: var(--accent-gold);
+}
+
+.star-rating-stars button:hover {
+  transform: scale(1.2);
+}
+
+.star-rating-info {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.comment-section {
+  border-top: 1px solid var(--border-default);
+  padding-top: var(--space-m);
+}
+
+.comment-section h4 {
+  font-size: 14px;
+  margin-bottom: var(--space-s);
+  font-family: var(--font-base);
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.comment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-s);
+  padding: var(--space-s);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-s);
+}
+
+.comment-item-body {
+  flex: 1;
+}
+
+.comment-item-meta {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.comment-item-text {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.comment-form {
+  display: flex;
+  gap: var(--space-s);
+  margin-top: var(--space-s);
+}
+
+.comment-form textarea {
+  flex: 1;
+  min-height: 60px;
+  padding: var(--space-s);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-s);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: var(--font-base);
+  font-size: 13px;
+  resize: vertical;
+}
+
+.comment-form textarea:focus {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 1px;
+}
+
+.comment-no-auth {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* ══════════════════════════════════════════════════════════
+ *  Feature 4: File Upload
+ * ══════════════════════════════════════════════════════════ */
+.file-upload-zone {
+  border: 2px dashed var(--border-default);
+  border-radius: var(--radius-m);
+  padding: var(--space-xl);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--motion-fast), background var(--motion-fast);
+  background: var(--bg-subtle);
+}
+
+.file-upload-zone:hover,
+.file-upload-zone.drag-over {
+  border-color: var(--accent-gold);
+  background: var(--bg-card);
+}
+
+.file-upload-zone p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: var(--space-s);
+}
+
+.file-upload-zone .browse-link {
+  color: var(--text-link);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.upload-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+  margin-top: var(--space-m);
+}
+
+.upload-file-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  padding: var(--space-s);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-s);
+}
+
+.upload-file-item .upload-progress {
+  flex: 1;
+  height: 6px;
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.upload-file-item .upload-progress-bar {
+  height: 100%;
+  background: var(--accent-gold);
+  border-radius: var(--radius-full);
+  transition: width var(--motion-fast);
+}
+
+/* ══════════════════════════════════════════════════════════
+ *  Feature 8: Analytics Dashboard
+ * ══════════════════════════════════════════════════════════ */
+.analytics-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-l);
+}
+
+.analytics-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-m);
+}
+
+.analytics-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-m);
+  padding: var(--space-m);
+  text-align: center;
+}
+
+.analytics-card .stat-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.analytics-card .stat-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: var(--space-xs);
+}
+
+.analytics-chart {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-m);
+  padding: var(--space-m);
+}
+
+.analytics-chart h3 {
+  margin-bottom: var(--space-m);
+}
+
+.analytics-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 120px;
+}
+
+.analytics-bars .bar {
+  flex: 1;
+  background: var(--accent-gold);
+  border-radius: 2px 2px 0 0;
+  min-width: 4px;
+  transition: height var(--motion-normal);
+}
+
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.analytics-table th,
+.analytics-table td {
+  text-align: left;
+  padding: var(--space-s) var(--space-m);
+  border-bottom: 1px solid var(--border-default);
+  font-size: 13px;
+}
+
+.analytics-table th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
