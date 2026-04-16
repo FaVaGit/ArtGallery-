@@ -7,10 +7,9 @@ import { getApiBaseUrl } from "../api/client";
 /* ────────────────────────────────────────────────────────────────
  * FabricCanvas – Interactive canvas-based gallery view
  *
- * Uses Fabric.js to render gallery items as objects on an HTML5
- * canvas.  Supports zoom via mouse-wheel, pan via click-drag on
- * the background, selection of individual cards, and double-click
- * to open folders.
+ * Hover reveals elegant action icons (View / Open).  Single-click
+ * on icons triggers lightbox (files) or navigation (folders).
+ * Folder navigation uses a cinematic zoom transition.
  * ──────────────────────────────────────────────────────────── */
 
 const CARD_W = 220;
@@ -31,6 +30,21 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<Canvas | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [hoveredItem, setHoveredItem] = useState<DriveItem | null>(null);
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [transition, setTransition] = useState<"zoom-in" | "zoom-out" | null>(null);
+
+  /* ── Zoom transition effect ─────────────────── */
+  const triggerZoomTransition = useCallback((direction: "zoom-in" | "zoom-out") => {
+    setTransition(direction);
+    setTimeout(() => setTransition(null), 500);
+  }, []);
+
+  /* ── Listen for gallery:back to play zoom-out ── */
+  useEffect(() => {
+    const unsub = eventBus.on("gallery:back", () => triggerZoomTransition("zoom-out"));
+    return unsub;
+  }, [triggerZoomTransition]);
 
   const buildScene = useCallback(async (fc: Canvas) => {
     fc.clear();
@@ -53,10 +67,10 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
         height: CARD_H,
         rx: CORNER_R,
         ry: CORNER_R,
-        fill: isSelected ? "#e8f0fe" : "#ffffff",
-        stroke: isSelected ? "#4a90d9" : "#e2e2e2",
+        fill: isSelected ? "#faf3e6" : "#ffffff",
+        stroke: isSelected ? "#c5a55a" : "#e0d6c8",
         strokeWidth: isSelected ? 2 : 1,
-        shadow: new Shadow({ color: "rgba(0,0,0,0.08)", blur: 12, offsetY: 4, offsetX: 0 }),
+        shadow: new Shadow({ color: "rgba(44,36,24,0.08)", blur: 12, offsetY: 4, offsetX: 0 }),
       });
 
       /* Thumbnail area */
@@ -64,7 +78,6 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
       const previews = isFolder ? folderPreviews?.[item.id] : undefined;
 
       if (isFolder && previews && previews.length > 0) {
-        /* 2x2 folder preview grid */
         const halfW = (CARD_W - 4) / 2;
         const halfH = THUMB_H / 2;
         const previewSlice = previews.slice(0, 4);
@@ -76,14 +89,10 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
             const img = await FabricImage.fromURL(url, { crossOrigin: "anonymous" });
             img.scaleToWidth(halfW);
             img.scaleToHeight(halfH);
-            img.set({
-              left: px,
-              top: py,
-              clipPath: new Rect({ width: halfW, height: halfH }),
-            });
+            img.set({ left: px, top: py, clipPath: new Rect({ width: halfW, height: halfH }) });
             thumbObjects.push(img);
           } catch {
-            thumbObjects.push(new Rect({ width: halfW, height: halfH, left: px, top: py, fill: "#d4e7f7" }));
+            thumbObjects.push(new Rect({ width: halfW, height: halfH, left: px, top: py, fill: "#e8ddd0" }));
           }
         }
       } else {
@@ -112,20 +121,23 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
         }
       }
 
-      /* Icon in thumb area */
-      const icon = new FabricText(isFolder ? "\uD83D\uDCC1" : "\uD83D\uDDBC", {
-        fontSize: 36,
-        left: CARD_W / 2 - 18,
-        top: THUMB_H / 2 - 18,
-        selectable: false,
-      });
+      /* Icon in thumb area (only when no real thumbnails) */
+      const hasRealThumb = item.thumbnailLink || (isFolder && previews && previews.length > 0);
+      if (!hasRealThumb) {
+        thumbObjects.push(new FabricText(isFolder ? "\uD83D\uDCC1" : "\uD83D\uDDBC", {
+          fontSize: 36,
+          left: CARD_W / 2 - 18,
+          top: THUMB_H / 2 - 18,
+          selectable: false,
+        }));
+      }
 
       /* Item name */
-      const nameText = new FabricText(item.name.length > 24 ? item.name.slice(0, 22) + "…" : item.name, {
+      const nameText = new FabricText(item.name.length > 24 ? item.name.slice(0, 22) + "\u2026" : item.name, {
         fontSize: 13,
-        fontFamily: "'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif",
+        fontFamily: "'Playfair Display', Georgia, serif",
         fontWeight: "600",
-        fill: "#1a1a2e",
+        fill: "#2c2418",
         left: 12,
         top: THUMB_H + 12,
         width: CARD_W - 24,
@@ -134,13 +146,13 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
       /* Type label */
       const typeText = new FabricText(isFolder ? labels.folder : labels.file, {
         fontSize: 11,
-        fontFamily: "'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif",
-        fill: "#6b7280",
+        fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
+        fill: "#6b5e4f",
         left: 12,
         top: THUMB_H + 32,
       });
 
-      const group = new Group([bg, ...thumbObjects, icon, nameText, typeText], {
+      const group = new Group([bg, ...thumbObjects, nameText, typeText], {
         left: x,
         top: y,
         selectable: false,
@@ -148,7 +160,6 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
         subTargetCheck: false,
       });
 
-      /* Store item reference for event dispatch */
       (group as unknown as Record<string, unknown>)._driveItem = item;
       fc.add(group);
     }
@@ -156,7 +167,7 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
     fc.renderAll();
   }, [items, selectedId, labels, folderPreviews]);
 
-  /* Initialise Fabric canvas once */
+  /* ── Initialise Fabric canvas once ──────────── */
   useEffect(() => {
     if (!canvasRef.current || fabricRef.current) return;
 
@@ -171,6 +182,37 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
       selection: false,
     });
 
+    /* Hover → show action overlay */
+    fc.on("mouse:over", (opt) => {
+      const target = opt.target;
+      if (!target) return;
+      const item = (target as unknown as Record<string, unknown>)._driveItem as DriveItem | undefined;
+      if (!item) return;
+
+      const bound = target.getBoundingRect();
+      const canvasEl = fc.getElement();
+      const canvasRect = canvasEl.getBoundingClientRect();
+      const wrapperRect = wrapper.getBoundingClientRect();
+
+      setHoveredItem(item);
+      setHoverPos({
+        x: canvasRect.left - wrapperRect.left + bound.left,
+        y: canvasRect.top - wrapperRect.top + bound.top,
+        w: bound.width,
+        h: bound.height,
+      });
+    });
+
+    fc.on("mouse:out", (opt) => {
+      const target = opt.target;
+      if (!target) return;
+      const item = (target as unknown as Record<string, unknown>)._driveItem as DriveItem | undefined;
+      if (item) {
+        setHoveredItem(null);
+        setHoverPos(null);
+      }
+    });
+
     /* Click → select item */
     fc.on("mouse:down", (opt) => {
       const target = opt.target;
@@ -178,18 +220,6 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
       const item = (target as unknown as Record<string, unknown>)._driveItem as DriveItem | undefined;
       if (item) {
         eventBus.emit("gallery:select", { item });
-      }
-    });
-
-    /* Double-click → navigate into folder OR view file in lightbox */
-    fc.on("mouse:dblclick", (opt) => {
-      const target = opt.target;
-      if (!target) return;
-      const item = (target as unknown as Record<string, unknown>)._driveItem as DriveItem | undefined;
-      if (item?.itemType === "folder") {
-        eventBus.emit("gallery:navigate", { item });
-      } else if (item?.itemType === "file") {
-        eventBus.emit("gallery:viewFile", { item });
       }
     });
 
@@ -233,12 +263,63 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
     return () => window.removeEventListener("resize", handleResize);
   }, [buildScene]);
 
+  /* ── Action handlers ────────────────────────── */
+  function handleAction(item: DriveItem) {
+    if (item.itemType === "folder") {
+      triggerZoomTransition("zoom-in");
+      setTimeout(() => eventBus.emit("gallery:navigate", { item }), 250);
+    } else {
+      eventBus.emit("gallery:viewFile", { item });
+    }
+  }
+
+  const transitionClass = transition ? `canvas-transition canvas-transition--${transition}` : "";
+
   return (
     <div className="fabric-canvas-wrapper" ref={wrapperRef}>
       <div className="canvas-hud">
         <span className="zoom-badge">{Math.round(zoom * 100)}%</span>
       </div>
-      <canvas ref={canvasRef} />
+
+      <div className={`canvas-scene ${transitionClass}`}>
+        <canvas ref={canvasRef} />
+      </div>
+
+      {/* Hover action overlay */}
+      {hoveredItem && hoverPos && (
+        <div
+          className="canvas-hover-overlay"
+          style={{
+            left: hoverPos.x,
+            top: hoverPos.y,
+            width: hoverPos.w,
+            height: THUMB_H * (hoverPos.h / CARD_H),
+          }}
+          onMouseLeave={() => { setHoveredItem(null); setHoverPos(null); }}
+        >
+          <button
+            type="button"
+            className="canvas-action-btn"
+            onClick={() => handleAction(hoveredItem)}
+            title={hoveredItem.itemType === "folder" ? labels.open : "View"}
+          >
+            {hoveredItem.itemType === "folder" ? (
+              /* Folder open arrow icon */
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                <polyline points="12 11 12 17" />
+                <polyline points="9 14 12 11 15 14" />
+              </svg>
+            ) : (
+              /* Eye / view icon */
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

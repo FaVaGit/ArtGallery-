@@ -72,24 +72,33 @@ export function GalleryGrid({ items, labels, selectedId, folderPreviews, onOpenF
               ) : (
                 <span>{isFolder ? "📁" : "🖼"}</span>
               )}
+
+              {/* Hover action icon */}
+              <button
+                type="button"
+                className="thumb-action-btn"
+                onClick={(e) => { e.stopPropagation(); if (isFolder) { onOpenFolder(item); } else { onViewFile?.(item); } }}
+                title={isFolder ? labels.open : labels.view}
+              >
+                {isFolder ? (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                    <polyline points="12 11 12 17" />
+                    <polyline points="9 14 12 11 15 14" />
+                  </svg>
+                ) : (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
             </div>
 
             <div className="meta">
               <h3 title={item.name}>{item.name}</h3>
               <p>{isFolder ? labels.folder : labels.file}{isFolder && previews ? ` · ${previews.length} items` : ""}</p>
               <p>{labels.updated}: {formatDate(item.modifiedTime)}</p>
-            </div>
-
-            <div className="actions">
-              {isFolder ? (
-                <button type="button" onClick={() => onOpenFolder(item)}>
-                  {labels.open}
-                </button>
-              ) : (
-                <button type="button" className="button-link" onClick={() => onViewFile?.(item)}>
-                  {labels.view}
-                </button>
-              )}
             </div>
           </article>
         );
