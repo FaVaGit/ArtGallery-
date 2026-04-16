@@ -23,9 +23,10 @@ interface FabricCanvasProps {
   items: DriveItem[];
   selectedId?: string;
   labels: { folder: string; file: string; open: string };
+  folderPreviews?: Record<string, DriveItem[]>;
 }
 
-export function FabricCanvas({ items, selectedId, labels }: FabricCanvasProps) {
+export function FabricCanvas({ items, selectedId, labels, folderPreviews }: FabricCanvasProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<Canvas | null>(null);
@@ -59,42 +60,56 @@ export function FabricCanvas({ items, selectedId, labels }: FabricCanvasProps) {
       });
 
       /* Thumbnail area */
-      let thumbObj: Rect | FabricImage;
-      const thumbUrl = item.thumbnailLink
-        ? `${getApiBaseUrl()}/drive/thumbnail/${encodeURIComponent(item.id)}?size=220`
-        : null;
+      const thumbObjects: (Rect | FabricImage | FabricText)[] = [];
+      const previews = isFolder ? folderPreviews?.[item.id] : undefined;
 
-      if (thumbUrl) {
-        try {
-          const img = await FabricImage.fromURL(thumbUrl, { crossOrigin: "anonymous" });
-          img.scaleToWidth(CARD_W - 2);
-          img.scaleToHeight(THUMB_H);
-          img.set({ left: 1, top: 1, clipPath: new Rect({ width: CARD_W - 2, height: THUMB_H, rx: CORNER_R, ry: CORNER_R }) });
-          thumbObj = img;
-        } catch {
-          thumbObj = new Rect({
-            width: CARD_W - 2,
-            height: THUMB_H,
-            rx: CORNER_R,
-            ry: CORNER_R,
-            left: 1,
-            top: 1,
-            fill: isFolder
-              ? "linear-gradient(135deg,#d4e7f7 0%,#b8d4f0 100%)"
-              : "linear-gradient(135deg,#e8dcc6 0%,#d7e8ea 100%)",
-          });
-          thumbObj.set({ fill: isFolder ? "#d4e7f7" : "#e8dcc6" });
+      if (isFolder && previews && previews.length > 0) {
+        /* 2x2 folder preview grid */
+        const halfW = (CARD_W - 4) / 2;
+        const halfH = THUMB_H / 2;
+        const previewSlice = previews.slice(0, 4);
+        for (let pi = 0; pi < previewSlice.length; pi++) {
+          const px = 1 + (pi % 2) * (halfW + 1);
+          const py = 1 + Math.floor(pi / 2) * halfH;
+          try {
+            const url = `${getApiBaseUrl()}/drive/thumbnail/${encodeURIComponent(previewSlice[pi].id)}?size=110`;
+            const img = await FabricImage.fromURL(url, { crossOrigin: "anonymous" });
+            img.scaleToWidth(halfW);
+            img.scaleToHeight(halfH);
+            img.set({
+              left: px,
+              top: py,
+              clipPath: new Rect({ width: halfW, height: halfH }),
+            });
+            thumbObjects.push(img);
+          } catch {
+            thumbObjects.push(new Rect({ width: halfW, height: halfH, left: px, top: py, fill: "#d4e7f7" }));
+          }
         }
       } else {
-        thumbObj = new Rect({
-          width: CARD_W - 2,
-          height: THUMB_H,
-          rx: CORNER_R,
-          ry: CORNER_R,
-          left: 1,
-          top: 1,
-          fill: isFolder ? "#d4e7f7" : "#e8dcc6",
-        });
+        const thumbUrl = item.thumbnailLink
+          ? `${getApiBaseUrl()}/drive/thumbnail/${encodeURIComponent(item.id)}?size=220`
+          : null;
+
+        if (thumbUrl) {
+          try {
+            const img = await FabricImage.fromURL(thumbUrl, { crossOrigin: "anonymous" });
+            img.scaleToWidth(CARD_W - 2);
+            img.scaleToHeight(THUMB_H);
+            img.set({ left: 1, top: 1, clipPath: new Rect({ width: CARD_W - 2, height: THUMB_H, rx: CORNER_R, ry: CORNER_R }) });
+            thumbObjects.push(img);
+          } catch {
+            thumbObjects.push(new Rect({
+              width: CARD_W - 2, height: THUMB_H, rx: CORNER_R, ry: CORNER_R,
+              left: 1, top: 1, fill: isFolder ? "#d4e7f7" : "#e8dcc6",
+            }));
+          }
+        } else {
+          thumbObjects.push(new Rect({
+            width: CARD_W - 2, height: THUMB_H, rx: CORNER_R, ry: CORNER_R,
+            left: 1, top: 1, fill: isFolder ? "#d4e7f7" : "#e8dcc6",
+          }));
+        }
       }
 
       /* Icon in thumb area */
@@ -125,7 +140,7 @@ export function FabricCanvas({ items, selectedId, labels }: FabricCanvasProps) {
         top: THUMB_H + 32,
       });
 
-      const group = new Group([bg, thumbObj, icon, nameText, typeText], {
+      const group = new Group([bg, ...thumbObjects, icon, nameText, typeText], {
         left: x,
         top: y,
         selectable: false,
@@ -139,7 +154,7 @@ export function FabricCanvas({ items, selectedId, labels }: FabricCanvasProps) {
     }
 
     fc.renderAll();
-  }, [items, selectedId, labels]);
+  }, [items, selectedId, labels, folderPreviews]);
 
   /* Initialise Fabric canvas once */
   useEffect(() => {
@@ -166,13 +181,15 @@ export function FabricCanvas({ items, selectedId, labels }: FabricCanvasProps) {
       }
     });
 
-    /* Double-click → navigate into folder */
+    /* Double-click → navigate into folder OR view file in lightbox */
     fc.on("mouse:dblclick", (opt) => {
       const target = opt.target;
       if (!target) return;
       const item = (target as unknown as Record<string, unknown>)._driveItem as DriveItem | undefined;
       if (item?.itemType === "folder") {
         eventBus.emit("gallery:navigate", { item });
+      } else if (item?.itemType === "file") {
+        eventBus.emit("gallery:viewFile", { item });
       }
     });
 

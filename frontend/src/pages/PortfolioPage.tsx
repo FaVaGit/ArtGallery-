@@ -104,6 +104,11 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
     setSelectedId(item?.id);
   });
 
+  /* ── Event-driven: view file (lightbox from canvas) ── */
+  useEvent("gallery:viewFile", ({ item }) => {
+    if (item.itemType === "file") setLightboxItem(item);
+  });
+
   /* ── Event-driven: view mode switch ──────────── */
   useEvent("canvas:viewMode", ({ mode }) => setViewMode(mode));
 
@@ -215,7 +220,7 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
       {error ? <p className="error-banner">{error}</p> : null}
 
       {viewMode === "canvas" ? (
-        <FabricCanvas items={items} selectedId={selectedId} labels={messages.common} />
+        <FabricCanvas items={items} selectedId={selectedId} labels={messages.common} folderPreviews={folderPreviews} />
       ) : (
         <GalleryGrid
           items={items}

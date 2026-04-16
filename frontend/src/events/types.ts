@@ -26,6 +26,7 @@ export interface EventMap {
   "gallery:navigate": { item: DriveItem };
   "gallery:back": void;
   "gallery:select": { item: DriveItem | null };
+  "gallery:viewFile": { item: DriveItem };
 
   /* ── Admin actions on Drive items ──────────── */
   "drive:createFolder": { name: string; parentId?: string };
