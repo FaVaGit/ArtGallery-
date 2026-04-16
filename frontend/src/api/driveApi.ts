@@ -1,5 +1,8 @@
 import { apiRequest } from "./client";
+import { isDemoMode, demoGetDriveStatus, demoListItems } from "../demo/demoMode";
 import type { DriveFoldersResponse, DriveItem, DriveItemsResponse } from "../types";
+
+const DEMO_WRITE_MSG = "Write operations are simulated in demo mode";
 
 interface ListItemsParams {
   folderId?: string;
@@ -22,6 +25,7 @@ function toQueryString(params: Record<string, string | undefined>): string {
 }
 
 export async function getDriveStatus(): Promise<{ ok: boolean }> {
+  if (isDemoMode()) return demoGetDriveStatus();
   return apiRequest<{ ok: boolean }>("/drive/status");
 }
 
@@ -31,6 +35,7 @@ export async function listFolders(parentId?: string): Promise<DriveFoldersRespon
 }
 
 export async function listItems(params: ListItemsParams): Promise<DriveItemsResponse> {
+  if (isDemoMode()) return demoListItems(params.folderId, params.search);
   const query = toQueryString({
     folderId: params.folderId,
     pageSize: params.pageSize ? String(params.pageSize) : undefined,
@@ -41,7 +46,12 @@ export async function listItems(params: ListItemsParams): Promise<DriveItemsResp
   return apiRequest<DriveItemsResponse>(`/drive/items${query}`);
 }
 
+function demoStub(id: string, name: string): DriveItem {
+  return { id, name, mimeType: "application/vnd.google-apps.folder", webViewLink: null, thumbnailLink: null, createdTime: new Date().toISOString(), modifiedTime: new Date().toISOString(), parents: [], itemType: "folder" };
+}
+
 export async function createFolder(token: string, name: string, parentId?: string): Promise<DriveItem> {
+  if (isDemoMode()) return demoStub(`demo-new-${Date.now()}`, `${name} (${DEMO_WRITE_MSG})`);
   return apiRequest<DriveItem>("/drive/folders", {
     method: "POST",
     token,
@@ -50,6 +60,7 @@ export async function createFolder(token: string, name: string, parentId?: strin
 }
 
 export async function renameItem(token: string, itemId: string, name: string): Promise<DriveItem> {
+  if (isDemoMode()) return demoStub(itemId, `${name} (${DEMO_WRITE_MSG})`);
   return apiRequest<DriveItem>(`/drive/items/${itemId}/rename`, {
     method: "PATCH",
     token,
@@ -58,6 +69,7 @@ export async function renameItem(token: string, itemId: string, name: string): P
 }
 
 export async function moveItem(token: string, itemId: string, targetParentId: string): Promise<DriveItem> {
+  if (isDemoMode()) return demoStub(itemId, DEMO_WRITE_MSG);
   return apiRequest<DriveItem>(`/drive/items/${itemId}/move`, {
     method: "PATCH",
     token,
@@ -71,6 +83,7 @@ export async function copyItem(
   targetParentId: string,
   name?: string,
 ): Promise<DriveItem> {
+  if (isDemoMode()) return demoStub(`demo-copy-${Date.now()}`, `${name ?? "Copy"} (${DEMO_WRITE_MSG})`);
   return apiRequest<DriveItem>("/drive/items/copy", {
     method: "POST",
     token,
@@ -79,6 +92,7 @@ export async function copyItem(
 }
 
 export async function deleteItem(token: string, itemId: string): Promise<void> {
+  if (isDemoMode()) return;
   await apiRequest<void>(`/drive/items/${itemId}`, {
     method: "DELETE",
     token,

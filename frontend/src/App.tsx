@@ -4,6 +4,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { eventBus, useEvent } from "./events";
 import { setApiBaseUrl } from "./api/client";
 import { getCurrentUser, login } from "./api/authApi";
+import { checkDemoMode, isDemoMode, resetDemoMode } from "./demo/demoMode";
 import { loadAppConfig, saveAppConfig, type AppConfig } from "./config/appConfig";
 import { TopNav } from "./components/TopNav";
 import { Toaster } from "./components/Toaster";
@@ -26,6 +27,7 @@ function App() {
   });
   const [config, setConfig] = useState<AppConfig>(() => loadAppConfig());
   const [bootstrapping, setBootstrapping] = useState(true);
+  const [demoMode, setDemoMode] = useState(false);
   const messages = getMessages(language);
 
   /* ── Persist language ──────────────────────── */
@@ -42,6 +44,8 @@ function App() {
   /* ── Restore session on mount ──────────────── */
   useEffect(() => {
     const restore = async () => {
+      await checkDemoMode();
+      setDemoMode(isDemoMode());
       if (!token) { setUser(null); setBootstrapping(false); return; }
       try {
         const res = await getCurrentUser(token);
@@ -82,6 +86,7 @@ function App() {
 
   useEvent("config:changed", ({ config: newConfig }) => {
     setConfig(newConfig);
+    resetDemoMode();
     eventBus.emit("notify:success", { message: messages.admin.configSaved });
   });
 
@@ -91,6 +96,13 @@ function App() {
 
   return (
     <div className="app-shell">
+      {demoMode && (
+        <div className="demo-banner">
+          {language === "it"
+            ? "Modalità demo — dati di esempio. Login demo: admin / demo"
+            : "Demo mode — sample data. Demo login: admin / demo"}
+        </div>
+      )}
       <TopNav
         brandName={config.brandName}
         user={user}

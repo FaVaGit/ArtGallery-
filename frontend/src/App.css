@@ -18,6 +18,17 @@
   flex-direction: column;
 }
 
+/* ── Demo Mode Banner ────────────────────────── */
+.demo-banner {
+  background: linear-gradient(135deg, var(--accent) 0%, #e67e22 100%);
+  color: #fff;
+  text-align: center;
+  padding: var(--space-xs) var(--space-m);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
 /* ── Acrylic Top Nav ─────────────────────────── */
 .top-nav {
   position: sticky;

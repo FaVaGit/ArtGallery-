@@ -4,6 +4,7 @@ import { ApiError } from "../api/client";
 import type { AppConfig } from "../config/appConfig";
 import type { AppMessages } from "../i18n/messages";
 import { getDriveStatus, listItems } from "../api/driveApi";
+import { isDemoMode } from "../demo/demoMode";
 import { GalleryGrid } from "../components/GalleryGrid";
 import { FabricCanvas } from "../components/FabricCanvas";
 import { eventBus, useEvent } from "../events";
@@ -111,8 +112,8 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
           <h1>{messages.portfolio.title}</h1>
           <p className="subtitle">{messages.portfolio.subtitle}</p>
         </div>
-        <div className={`status-pill ${status}`}>
-          {messages.portfolio.driveConnection}: {status === "checking" ? messages.portfolio.checking : status === "ok" ? messages.portfolio.online : messages.portfolio.error}
+        <div className={`status-pill ${isDemoMode() ? "ok" : status}`}>
+          {messages.portfolio.driveConnection}: {isDemoMode() ? "Demo" : status === "checking" ? messages.portfolio.checking : status === "ok" ? messages.portfolio.online : messages.portfolio.error}
         </div>
       </header>
 
