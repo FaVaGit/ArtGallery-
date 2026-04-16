@@ -17,7 +17,7 @@ interface PortfolioPageProps {
   token: string | null;
 }
 
-export function PortfolioPage({ config, messages, token: _token }: PortfolioPageProps) {
+export function PortfolioPage({ config, messages }: PortfolioPageProps) {
   const [items, setItems] = useState<DriveItem[]>([]);
   const [folderId, setFolderId] = useState("");
   const [search, setSearch] = useState("");
