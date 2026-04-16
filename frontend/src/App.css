@@ -351,6 +351,8 @@ main {
   display: flex;
   gap: 8px;
   border-top: 1px solid var(--border-default);
+  position: relative;
+  z-index: 2;
 }
 
 /* ── View toggle ─────────────────────────────── */
