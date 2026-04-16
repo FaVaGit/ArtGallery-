@@ -296,29 +296,12 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
             height: THUMB_H * (hoverPos.h / CARD_H),
           }}
           onMouseLeave={() => { setHoveredItem(null); setHoverPos(null); }}
-        >
-          <button
-            type="button"
-            className="canvas-action-btn"
-            onClick={() => handleAction(hoveredItem)}
-            title={hoveredItem.itemType === "folder" ? labels.open : "View"}
-          >
-            {hoveredItem.itemType === "folder" ? (
-              /* Folder open arrow icon */
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                <polyline points="12 11 12 17" />
-                <polyline points="9 14 12 11 15 14" />
-              </svg>
-            ) : (
-              /* Eye / view icon */
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            )}
-          </button>
-        </div>
+          onClick={() => handleAction(hoveredItem)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleAction(hoveredItem); } }}
+          title={hoveredItem.itemType === "folder" ? labels.open : "View"}
+        />
       )}
     </div>
   );

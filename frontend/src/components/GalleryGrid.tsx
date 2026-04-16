@@ -39,7 +39,7 @@ function formatDate(value: string | null): string {
   return date.toLocaleDateString();
 }
 
-export function GalleryGrid({ items, labels, shareLabels, selectedId, folderPreviews, onOpenFolder, onSelectItem, onViewFile }: GalleryGridProps) {
+export function GalleryGrid({ items, labels, shareLabels, selectedId, folderPreviews, onOpenFolder, onViewFile }: GalleryGridProps) {
   if (!items.length) {
     return <p className="empty">{labels.noContent}</p>;
   }
@@ -58,14 +58,11 @@ export function GalleryGrid({ items, labels, shareLabels, selectedId, folderPrev
             key={item.id}
             className={`gallery-card ${selectedId === item.id ? "selected" : ""}`}
             style={{ "--i": index } as React.CSSProperties}
+            onClick={() => { if (isFolder) { onOpenFolder(item); } else { onViewFile?.(item); } }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isFolder) { onOpenFolder(item); } else { onViewFile?.(item); } } }}
           >
-            <button
-              type="button"
-              className="select-overlay"
-              onClick={() => onSelectItem?.(item)}
-              aria-label={`Select ${item.name}`}
-            />
-
             <div className="thumb">
               {isFolder && previews && previews.length > 0 ? (
                 <div className="folder-preview-grid">
@@ -84,26 +81,8 @@ export function GalleryGrid({ items, labels, shareLabels, selectedId, folderPrev
                 <span>{isFolder ? "📁" : "🖼"}</span>
               )}
 
-              {/* Hover action icon */}
-              <button
-                type="button"
-                className="thumb-action-btn"
-                onClick={(e) => { e.stopPropagation(); if (isFolder) { onOpenFolder(item); } else { onViewFile?.(item); } }}
-                title={isFolder ? labels.open : labels.view}
-              >
-                {isFolder ? (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                    <polyline points="12 11 12 17" />
-                    <polyline points="9 14 12 11 15 14" />
-                  </svg>
-                ) : (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
-              </button>
+              {/* Hover shimmer overlay */}
+              <div className="thumb-hover-shimmer" />
             </div>
 
             <div className="meta">
