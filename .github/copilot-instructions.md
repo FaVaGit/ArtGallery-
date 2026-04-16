@@ -34,6 +34,12 @@
 - Deploy workflow: `.github/workflows/deploy-pages.yml` (GitHub Pages on push to main)
 - Live URL: https://favagit.github.io/ArtGallery-/
 
+## Hosting
+
+- Frontend: GitHub Pages (static)
+- Backend: Render free tier (`render.yaml` Blueprint in repo root)
+- CORS_ORIGIN env var restricts backend to `https://favagit.github.io`
+
 ## Guidelines
 
 - Work through each checklist item systematically.

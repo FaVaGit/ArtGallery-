@@ -81,6 +81,33 @@ GitHub Pages hosts only static files. The backend API cannot run on GitHub Pages
 
 For production, keep frontend on GitHub Pages and deploy backend separately (for example Render, Railway, Azure Web App, or VPS), then configure frontend API base URL.
 
+## Backend Deployment on Render (Free Tier)
+
+A `render.yaml` Blueprint is included in the repository.
+
+### Quick Setup
+
+1. Go to https://dashboard.render.com and sign in with GitHub.
+2. Click **New** → **Blueprint** and select the **FaVaGit/ArtGallery-** repo.
+3. Render reads `render.yaml` and creates the **artgallery-backend** web service.
+4. In the Render dashboard set the following environment variables (marked `sync: false`):
+   - `AUTH_USERS_JSON` — e.g. `[{"username":"admin","password":"strongpwd","role":"admin"}]`
+   - `GOOGLE_DRIVE_ROOT_FOLDER_ID` — the Google Drive folder shared with the service account
+   - `GOOGLE_SERVICE_ACCOUNT_JSON` — full JSON key of the Google service account
+5. Deploy triggers automatically. Health check: `GET /api/health`.
+
+### Connect Frontend to Backend
+
+After Render assigns a URL (e.g. `https://artgallery-backend.onrender.com`):
+
+1. Open the live site: https://favagit.github.io/ArtGallery-/
+2. Go to **Admin** → **Configuration** panel.
+3. Set **API Base URL** to `https://artgallery-backend.onrender.com/api`.
+4. Save — the app will reconnect and exit demo mode.
+
+> **Note:** Render free-tier services spin down after 15 min of inactivity.
+> The first request after idle may take ~30 s while the service restarts.
+
 ## Google Drive Backend Integration
 
 Google Drive service endpoints are now available under `/api/drive`.
