@@ -242,3 +242,34 @@ export async function deleteItem(itemId: string): Promise<void> {
     supportsAllDrives: true,
   });
 }
+
+export async function getThumbnail(
+  fileId: string,
+  size = 220,
+): Promise<{ buffer: Buffer; mimeType: string }> {
+  const drive = getDriveClient();
+
+  const meta = await drive.files.get({
+    fileId,
+    fields: "thumbnailLink",
+    supportsAllDrives: true,
+  });
+
+  const link = meta.data.thumbnailLink;
+  if (!link) {
+    throw new HttpError(404, "No thumbnail available for this file");
+  }
+
+  // Replace the default size suffix with the requested size
+  const url = link.replace(/=s\d+$/, `=s${size}`);
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new HttpError(502, "Failed to fetch thumbnail from Google");
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  const contentType = response.headers.get("content-type") ?? "image/png";
+
+  return { buffer: Buffer.from(arrayBuffer), mimeType: contentType };
+}

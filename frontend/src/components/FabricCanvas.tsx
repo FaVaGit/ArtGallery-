@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas, FabricImage, Rect, FabricText, Group, Shadow, Point } from "fabric";
 import type { DriveItem } from "../types";
 import { eventBus } from "../events";
+import { getApiBaseUrl } from "../api/client";
+import { isDemoMode } from "../demo/demoMode";
 
 /* ────────────────────────────────────────────────────────────────
  * FabricCanvas – Interactive canvas-based gallery view
@@ -59,9 +61,15 @@ export function FabricCanvas({ items, selectedId, labels }: FabricCanvasProps) {
 
       /* Thumbnail area */
       let thumbObj: Rect | FabricImage;
-      if (item.thumbnailLink) {
+      const thumbUrl = item.thumbnailLink
+        ? isDemoMode()
+          ? item.thumbnailLink
+          : `${getApiBaseUrl()}/drive/thumbnail/${encodeURIComponent(item.id)}?size=220`
+        : null;
+
+      if (thumbUrl) {
         try {
-          const img = await FabricImage.fromURL(item.thumbnailLink, { crossOrigin: "anonymous" });
+          const img = await FabricImage.fromURL(thumbUrl, { crossOrigin: "anonymous" });
           img.scaleToWidth(CARD_W - 2);
           img.scaleToHeight(THUMB_H);
           img.set({ left: 1, top: 1, clipPath: new Rect({ width: CARD_W - 2, height: THUMB_H, rx: CORNER_R, ry: CORNER_R }) });

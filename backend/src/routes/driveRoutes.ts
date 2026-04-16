@@ -6,6 +6,7 @@ import {
   copyItem,
   createFolder,
   deleteItem,
+  getThumbnail,
   listFolders,
   listItems,
   moveItem,
@@ -202,6 +203,28 @@ router.delete("/items/:itemId", requireAuth, requireRole(["admin"]), async (req,
     const itemId = getItemIdParam(req.params.itemId);
     await deleteItem(itemId);
     res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/thumbnail/:fileId", async (req, res, next) => {
+  try {
+    const fileId = getItemIdParam(req.params.fileId);
+    const size = req.query.size ? Number(req.query.size) : 220;
+
+    if (Number.isNaN(size) || size < 32 || size > 1600) {
+      throw new HttpError(400, "size must be between 32 and 1600");
+    }
+
+    const { buffer, mimeType } = await getThumbnail(fileId, size);
+
+    res.set({
+      "Content-Type": mimeType,
+      "Cache-Control": "public, max-age=86400",
+      "Access-Control-Allow-Origin": "*",
+    });
+    res.send(buffer);
   } catch (error) {
     next(error);
   }
