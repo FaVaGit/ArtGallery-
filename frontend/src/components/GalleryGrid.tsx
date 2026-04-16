@@ -1,4 +1,5 @@
 import type { DriveItem } from "../types";
+import { getApiBaseUrl } from "../api/client";
 
 interface GalleryGridProps {
   items: DriveItem[];
@@ -38,7 +39,9 @@ export function GalleryGrid({ items, labels, selectedId, onOpenFolder, onSelectI
     <div className="gallery-grid">
       {items.map((item) => {
         const isFolder = item.itemType === "folder";
-        const thumb = item.thumbnailLink;
+        const thumb = item.thumbnailLink
+          ? `${getApiBaseUrl()}/drive/thumbnail/${encodeURIComponent(item.id)}?size=220`
+          : null;
 
         return (
           <article key={item.id} className={`gallery-card ${selectedId === item.id ? "selected" : ""}`}>
