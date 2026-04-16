@@ -34,6 +34,9 @@ interface Messages {
     currentFolder: string;
     rootConfigured: string;
     unableToLoad: string;
+    home: string;
+    searchPlaceholder: string;
+    itemCount: string;
   };
   admin: {
     accessEyebrow: string;
@@ -131,6 +134,9 @@ const messages: Record<Language, Messages> = {
       currentFolder: "Current folder",
       rootConfigured: "Root configured on backend",
       unableToLoad: "Unable to load gallery",
+      home: "Home",
+      searchPlaceholder: "Search works…",
+      itemCount: "{count} items",
     },
     admin: {
       accessEyebrow: "Administrator Access",
@@ -224,6 +230,9 @@ const messages: Record<Language, Messages> = {
       currentFolder: "Cartella corrente",
       rootConfigured: "Root configurata nel backend",
       unableToLoad: "Impossibile caricare la galleria",
+      home: "Home",
+      searchPlaceholder: "Cerca opere…",
+      itemCount: "{count} elementi",
     },
     admin: {
       accessEyebrow: "Accesso Amministratore",

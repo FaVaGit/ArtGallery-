@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ApiError } from "../api/client";
 import type { AppConfig } from "../config/appConfig";
@@ -32,10 +32,7 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
   const [folderPreviews, setFolderPreviews] = useState<Record<string, DriveItem[]>>({});
   const [currentFolderName, setCurrentFolderName] = useState("");
 
-  const activeFolderLabel = useMemo(
-    () => (folderId || config.defaultFolderId ? folderId || config.defaultFolderId : messages.portfolio.rootConfigured),
-    [folderId, config.defaultFolderId, messages.portfolio.rootConfigured],
-  );
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const loadData = useCallback(async (nextFolderId?: string, nextSearch?: string) => {
     setLoading(true);
@@ -141,14 +138,16 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
         </div>
       </header>
 
-      <section className="filters-panel">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-s)" }}>
+      {/* ── Gallery Toolbar ─────────────────────── */}
+      <div className="gallery-toolbar">
+        <div className="toolbar-left">
           <div className="view-toggle">
             <button
               type="button"
               className={viewMode === "grid" ? "active" : ""}
               onClick={() => { setViewMode("grid"); eventBus.emit("canvas:viewMode", { mode: "grid" }); }}
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
               Grid
             </button>
             <button
@@ -156,66 +155,87 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
               className={viewMode === "canvas" ? "active" : ""}
               onClick={() => { setViewMode("canvas"); eventBus.emit("canvas:viewMode", { mode: "canvas" }); }}
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5zm10-1h6v2h-6V4zm0 4h4v2h-4V8zM4 14a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4zm10-1h6v2h-6v-2zm0 4h4v2h-4v-2z"/></svg>
               Canvas
             </button>
           </div>
+
+          <span className="toolbar-count">
+            {items.length > 0 && messages.portfolio.itemCount.replace("{count}", String(items.length))}
+          </span>
         </div>
 
-        {/* Breadcrumb navigation */}
+        <div className="toolbar-right">
+          {searchOpen ? (
+            <div className="toolbar-search">
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") loadData(folderId, search).catch(() => undefined); }}
+                onBlur={() => { if (!search) setSearchOpen(false); }}
+                placeholder={messages.portfolio.searchPlaceholder}
+              />
+              <button type="button" className="search-go" onClick={() => loadData(folderId, search).catch(() => undefined)} disabled={loading}>
+                {loading ? "…" : "↵"}
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="toolbar-icon-btn" onClick={() => setSearchOpen(true)} title={messages.portfolio.searchPlaceholder}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Breadcrumb Path Bar ─────────────────── */}
+      <nav className="path-bar">
         {(history.length > 0 || currentFolderName) && (
-          <nav className="breadcrumb-nav">
-            <button type="button" className="breadcrumb-back" onClick={goBack} disabled={!history.length || loading}>
-              ← {messages.portfolio.backFolder}
-            </button>
-            <span className="breadcrumb-separator">/</span>
-            <button type="button" className="breadcrumb-item" onClick={() => {
-              setHistory([]);
-              setFolderId("");
-              setCurrentFolderName("");
-              loadData("", search).catch(() => undefined);
-            }}>
-              Root
-            </button>
-            {history.map((entry, i) => (
-              <span key={entry.id}>
-                <span className="breadcrumb-separator">/</span>
-                <button type="button" className="breadcrumb-item" onClick={() => {
-                  const newHistory = history.slice(0, i);
-                  setHistory(newHistory);
-                  setFolderId(entry.id);
-                  setCurrentFolderName(entry.name);
-                  loadData(entry.id, search).catch(() => undefined);
-                }}>
-                  {entry.name}
-                </button>
-              </span>
-            ))}
-            {currentFolderName && (
-              <>
-                <span className="breadcrumb-separator">/</span>
-                <span className="breadcrumb-current">{currentFolderName}</span>
-              </>
-            )}
-          </nav>
+          <button type="button" className="path-back" onClick={goBack} disabled={!history.length || loading} title={messages.portfolio.backFolder}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
         )}
 
-        <div className="inline-fields">
-          <input
-            value={folderId}
-            onChange={(e) => setFolderId(e.target.value)}
-            placeholder={messages.common.folderIdOptional}
-          />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={messages.common.searchByName}
-          />
-          <button type="button" onClick={() => { eventBus.emit("gallery:load", { folderId, search }); loadData(folderId, search); }} disabled={loading}>
-            {loading ? messages.common.loading : messages.common.refresh}
-          </button>
-        </div>
-        <p className="path-label">{messages.portfolio.currentFolder}: {activeFolderLabel}</p>
-      </section>
+        <button type="button" className="path-segment path-home" onClick={() => {
+          setHistory([]);
+          setFolderId("");
+          setCurrentFolderName("");
+          setSearch("");
+          loadData("", "").catch(() => undefined);
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          <span>{messages.portfolio.home}</span>
+        </button>
+
+        {history.map((entry, i) => (
+          <span key={entry.id} className="path-crumb">
+            <svg className="path-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+            <button type="button" className="path-segment" onClick={() => {
+              const newHistory = history.slice(0, i);
+              setHistory(newHistory);
+              setFolderId(entry.id);
+              setCurrentFolderName(entry.name);
+              loadData(entry.id, search).catch(() => undefined);
+            }}>
+              {entry.name}
+            </button>
+          </span>
+        ))}
+
+        {currentFolderName && (
+          <span className="path-crumb">
+            <svg className="path-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+            <span className="path-current">{currentFolderName}</span>
+          </span>
+        )}
+      </nav>
 
       {error ? <p className="error-banner">{error}</p> : null}
 
