@@ -63,6 +63,8 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
 
       /* Card background */
       const bg = new Rect({
+        left: 0,
+        top: 0,
         width: CARD_W,
         height: CARD_H,
         rx: CORNER_R,
@@ -87,9 +89,10 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
           try {
             const url = `${getApiBaseUrl()}/drive/thumbnail/${encodeURIComponent(previewSlice[pi].id)}?size=110`;
             const img = await FabricImage.fromURL(url, { crossOrigin: "anonymous" });
-            img.scaleToWidth(halfW);
-            img.scaleToHeight(halfH);
-            img.set({ left: px, top: py, clipPath: new Rect({ width: halfW, height: halfH }) });
+            const scX = halfW / (img.width || halfW);
+            const scY = halfH / (img.height || halfH);
+            const sc = Math.max(scX, scY);
+            img.set({ left: px, top: py, scaleX: sc, scaleY: sc, clipPath: new Rect({ width: halfW / sc, height: halfH / sc }) });
             thumbObjects.push(img);
           } catch {
             thumbObjects.push(new Rect({ width: halfW, height: halfH, left: px, top: py, fill: "#e8ddd0" }));
@@ -103,9 +106,12 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
         if (thumbUrl) {
           try {
             const img = await FabricImage.fromURL(thumbUrl, { crossOrigin: "anonymous" });
-            img.scaleToWidth(CARD_W - 2);
-            img.scaleToHeight(THUMB_H);
-            img.set({ left: 1, top: 1, clipPath: new Rect({ width: CARD_W - 2, height: THUMB_H, rx: CORNER_R, ry: CORNER_R }) });
+            const tw = CARD_W - 2;
+            const th = THUMB_H;
+            const scX = tw / (img.width || tw);
+            const scY = th / (img.height || th);
+            const sc = Math.max(scX, scY);
+            img.set({ left: 1, top: 1, scaleX: sc, scaleY: sc, clipPath: new Rect({ width: tw / sc, height: th / sc, rx: CORNER_R / sc, ry: CORNER_R / sc }) });
             thumbObjects.push(img);
           } catch {
             thumbObjects.push(new Rect({
@@ -213,13 +219,17 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
       }
     });
 
-    /* Click → select item */
+    /* Click → open folder / view file */
     fc.on("mouse:down", (opt) => {
       const target = opt.target;
       if (!target) return;
       const item = (target as unknown as Record<string, unknown>)._driveItem as DriveItem | undefined;
       if (item) {
-        eventBus.emit("gallery:select", { item });
+        if (item.itemType === "folder") {
+          eventBus.emit("gallery:navigate", { item });
+        } else {
+          eventBus.emit("gallery:viewFile", { item });
+        }
       }
     });
 
