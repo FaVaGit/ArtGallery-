@@ -3,7 +3,6 @@ import { Canvas, FabricImage, Rect, FabricText, Group, Shadow, Point } from "fab
 import type { DriveItem } from "../types";
 import { eventBus } from "../events";
 import { getApiBaseUrl } from "../api/client";
-import { isDemoMode } from "../demo/demoMode";
 
 /* ────────────────────────────────────────────────────────────────
  * FabricCanvas – Interactive canvas-based gallery view
@@ -62,9 +61,7 @@ export function FabricCanvas({ items, selectedId, labels }: FabricCanvasProps) {
       /* Thumbnail area */
       let thumbObj: Rect | FabricImage;
       const thumbUrl = item.thumbnailLink
-        ? isDemoMode()
-          ? item.thumbnailLink
-          : `${getApiBaseUrl()}/drive/thumbnail/${encodeURIComponent(item.id)}?size=220`
+        ? `${getApiBaseUrl()}/drive/thumbnail/${encodeURIComponent(item.id)}?size=220`
         : null;
 
       if (thumbUrl) {
