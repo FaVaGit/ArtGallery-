@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import type { DriveItem } from "../types";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface AdminActionsProps {
   labels: {
@@ -45,6 +46,7 @@ export function AdminActions({
   const [targetParentId, setTargetParentId] = useState("");
   const [copyName, setCopyName] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const selectedLabel = useMemo(() => {
     if (!selectedItem) {
@@ -142,12 +144,26 @@ export function AdminActions({
             type="button"
             className="danger"
             disabled={!selectedItem || busy !== null}
-            onClick={() => selectedItem && run("delete", () => onDelete(selectedItem.id))}
+            onClick={() => setConfirmOpen(true)}
           >
             {busy === "delete" ? labels.deleting : labels.delete}
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title={labels.delete}
+        message={selectedItem ? `Are you sure you want to delete "${selectedItem.name}"? This action cannot be undone.` : ""}
+        confirmLabel={labels.delete}
+        cancelLabel="Cancel"
+        danger
+        onConfirm={() => {
+          setConfirmOpen(false);
+          if (selectedItem) run("delete", () => onDelete(selectedItem.id));
+        }}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </section>
   );
 }

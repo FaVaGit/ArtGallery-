@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiError } from "../api/client";
 import type { AppConfig } from "../config/appConfig";
@@ -6,11 +6,13 @@ import type { AppMessages } from "../i18n/messages";
 import { getDriveStatus, listItems } from "../api/driveApi";
 import { trackEvent } from "../api/analyticsApi";
 import { GalleryGrid } from "../components/GalleryGrid";
-import { FabricCanvas } from "../components/FabricCanvas";
 import { Lightbox } from "../components/Lightbox";
 import { FilterBar, type FilterState } from "../components/FilterBar";
+import { SkeletonGrid } from "../components/SkeletonCard";
 import { eventBus, useEvent } from "../events";
 import type { DriveItem } from "../types";
+
+const FabricCanvas = lazy(() => import("../components/FabricCanvas").then((m) => ({ default: m.FabricCanvas })));
 
 type ViewMode = "grid" | "canvas";
 
@@ -59,6 +61,7 @@ export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ type: "all", sortBy: "name", sortOrder: "asc" });
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const items = applyClientFilters(rawItems, filters);
 
@@ -103,6 +106,20 @@ export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
       setLoading(false);
     }
   }, [config.defaultFolderId, messages.portfolio.unableToLoad]);
+
+  /* ── Debounced search ──────────────────────── */
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      loadData(folderId, value).catch(() => undefined);
+    }, 300);
+  }
+
+  function clearSearch() {
+    setSearch("");
+    loadData(folderId, "").catch(() => undefined);
+  }
 
   /* ── Bootstrap: check drive status + load data ── */
   useEffect(() => {
@@ -228,14 +245,18 @@ export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
         <div className="toolbar-right">
           {searchOpen ? (
             <div className="toolbar-search">
-              <input
-                autoFocus
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") loadData(folderId, search).catch(() => undefined); }}
-                onBlur={() => { if (!search) setSearchOpen(false); }}
-                placeholder={messages.portfolio.searchPlaceholder}
-              />
+              <div className="search-input-wrapper">
+                <input
+                  autoFocus
+                  value={search}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onBlur={() => { if (!search) setSearchOpen(false); }}
+                  placeholder={messages.portfolio.searchPlaceholder}
+                />
+                {search && (
+                  <button type="button" className="search-clear" onClick={clearSearch} aria-label="Clear search">✕</button>
+                )}
+              </div>
               <button type="button" className="search-go" onClick={() => loadData(folderId, search).catch(() => undefined)} disabled={loading}>
                 {loading ? "…" : "↵"}
               </button>
@@ -251,7 +272,7 @@ export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
       </div>
 
       {/* ── Breadcrumb Path Bar ─────────────────── */}
-      <nav className="path-bar">
+      <nav className="path-bar" role="navigation" aria-label="Breadcrumb">
         {(history.length > 0 || currentFolderName) && (
           <button type="button" className="path-back" onClick={goBack} disabled={!history.length || loading} title={messages.portfolio.backFolder}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -297,11 +318,22 @@ export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
         )}
       </nav>
 
-      {error ? <p className="error-banner">{error}</p> : null}
+      {error ? (
+        <div className="error-banner" role="alert" aria-live="assertive">
+          <span>{error}</span>
+          <button type="button" className="ghost retry-btn" onClick={() => loadData(folderId, search).catch(() => undefined)}>
+            {messages.common.refresh}
+          </button>
+        </div>
+      ) : null}
 
       <div className={galleryTransitionClass}>
-        {viewMode === "canvas" ? (
-          <FabricCanvas items={items} selectedId={selectedId} labels={messages.common} folderPreviews={folderPreviews} />
+        {loading && rawItems.length === 0 ? (
+          <SkeletonGrid count={8} />
+        ) : viewMode === "canvas" ? (
+          <Suspense fallback={<SkeletonGrid count={6} />}>
+            <FabricCanvas items={items} selectedId={selectedId} labels={messages.common} folderPreviews={folderPreviews} />
+          </Suspense>
         ) : (
           <GalleryGrid
             items={items}
@@ -322,6 +354,8 @@ export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
           onClose={() => setLightboxItem(null)}
           messages={messages}
           token={token}
+          items={items}
+          onNavigate={(newItem) => setLightboxItem(newItem)}
         />
       )}
     </section>

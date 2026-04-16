@@ -12,18 +12,29 @@ interface FilterBarProps {
   labels: AppMessages["filter"];
 }
 
+const typeOptions: { value: FilterState["type"]; labelKey: "typeAll" | "typeFolders" | "typeImages" }[] = [
+  { value: "all", labelKey: "typeAll" },
+  { value: "folders", labelKey: "typeFolders" },
+  { value: "images", labelKey: "typeImages" },
+];
+
 export function FilterBar({ filters, onChange, labels }: FilterBarProps) {
   return (
-    <div className="filter-bar">
-      <select
-        value={filters.type}
-        onChange={(e) => onChange({ ...filters, type: e.target.value as FilterState["type"] })}
-        aria-label={labels.filterType}
-      >
-        <option value="all">{labels.typeAll}</option>
-        <option value="folders">{labels.typeFolders}</option>
-        <option value="images">{labels.typeImages}</option>
-      </select>
+    <div className="filter-bar" role="toolbar" aria-label={labels.filterType}>
+      <div className="filter-chips" role="radiogroup" aria-label={labels.filterType}>
+        {typeOptions.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            className={`filter-chip ${filters.type === opt.value ? "filter-chip--active" : ""}`}
+            role="radio"
+            aria-checked={filters.type === opt.value}
+            onClick={() => onChange({ ...filters, type: opt.value })}
+          >
+            {labels[opt.labelKey]}
+          </button>
+        ))}
+      </div>
 
       <select
         value={`${filters.sortBy}-${filters.sortOrder}`}

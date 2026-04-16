@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { DriveItem } from "../types";
 import { getApiBaseUrl } from "../api/client";
 import { ShareButton } from "./ShareButton";
@@ -39,13 +40,38 @@ function formatDate(value: string | null): string {
   return date.toLocaleDateString();
 }
 
+function ThumbImage({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <>
+      {!loaded && <div className="thumb-shimmer skeleton-shimmer" />}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        className={loaded ? "thumb-img--loaded" : "thumb-img--loading"}
+        onLoad={() => setLoaded(true)}
+      />
+    </>
+  );
+}
+
 export function GalleryGrid({ items, labels, shareLabels, selectedId, folderPreviews, onOpenFolder, onViewFile }: GalleryGridProps) {
   if (!items.length) {
-    return <p className="empty">{labels.noContent}</p>;
+    return (
+      <div className="empty-state">
+        <svg className="empty-state-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21 15 16 10 5 21" />
+        </svg>
+        <p>{labels.noContent}</p>
+      </div>
+    );
   }
 
   return (
-    <div className="gallery-grid">
+    <div className="gallery-grid" role="list">
       {items.map((item, index) => {
         const isFolder = item.itemType === "folder";
         const thumb = item.thumbnailLink
@@ -60,6 +86,7 @@ export function GalleryGrid({ items, labels, shareLabels, selectedId, folderPrev
             style={{ "--i": index } as React.CSSProperties}
             onClick={() => { if (isFolder) { onOpenFolder(item); } else { onViewFile?.(item); } }}
             role="button"
+            aria-label={`${isFolder ? labels.folder : labels.file}: ${item.name}`}
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isFolder) { onOpenFolder(item); } else { onViewFile?.(item); } } }}
           >
@@ -67,16 +94,15 @@ export function GalleryGrid({ items, labels, shareLabels, selectedId, folderPrev
               {isFolder && previews && previews.length > 0 ? (
                 <div className="folder-preview-grid">
                   {previews.slice(0, 4).map((p) => (
-                    <img
+                    <ThumbImage
                       key={p.id}
                       src={`${getApiBaseUrl()}/drive/thumbnail/${encodeURIComponent(p.id)}?size=110`}
                       alt={p.name}
-                      loading="lazy"
                     />
                   ))}
                 </div>
               ) : thumb ? (
-                <img src={thumb} alt={item.name} loading="lazy" />
+                <ThumbImage src={thumb} alt={item.name} />
               ) : (
                 <span>{isFolder ? "📁" : "🖼"}</span>
               )}
