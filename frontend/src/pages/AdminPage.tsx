@@ -6,6 +6,7 @@ import type { AppMessages } from "../i18n/messages";
 import { copyItem, createFolder, deleteItem, listItems, moveItem, renameItem } from "../api/driveApi";
 import { AdminActions } from "../components/AdminActions";
 import { GalleryGrid } from "../components/GalleryGrid";
+import { eventBus, useEvent } from "../events";
 import type { AuthUser, DriveItem } from "../types";
 
 interface AdminPageProps {
@@ -13,11 +14,9 @@ interface AdminPageProps {
   user: AuthUser | null;
   messages: AppMessages;
   config: AppConfig;
-  onConfigChange: (config: AppConfig) => void;
-  onLogin: (username: string, password: string) => Promise<void>;
 }
 
-export function AdminPage({ token, user, messages, config, onConfigChange, onLogin }: AdminPageProps) {
+export function AdminPage({ token, user, messages, config }: AdminPageProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [folderId, setFolderId] = useState("");
@@ -31,44 +30,47 @@ export function AdminPage({ token, user, messages, config, onConfigChange, onLog
 
   const isAdmin = user?.role === "admin";
 
-  useEffect(() => {
-    setConfigDraft(config);
-  }, [config]);
+  useEffect(() => { setConfigDraft(config); }, [config]);
+
+  /* ── Listen for auth events to clear error ── */
+  useEvent("auth:loginFailed", ({ error: msg }) => setError(msg));
+  useEvent("auth:loginSuccess", () => setError(null));
+
+  /* ── Listen for drive action results ──────── */
+  useEvent("drive:actionSuccess", ({ message }) => { setFeedback(message); loadData().catch(() => undefined); });
+  useEvent("drive:actionFailed", ({ message }) => setError(message));
 
   async function loadData(nextFolderId = folderId, nextSearch = search) {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await listItems({
+      const res = await listItems({
         folderId: nextFolderId || config.defaultFolderId || undefined,
         search: nextSearch || undefined,
         pageSize: 200,
       });
-
-      setItems(response.items);
+      setItems(res.items);
       setSelectedItem(null);
+      eventBus.emit("gallery:loaded", { items: res.items, folderId: nextFolderId });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : messages.admin.loadDriveFailed);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }
 
   async function perform(action: () => Promise<unknown>, successMessage: string) {
-    if (!token) {
-      setError(messages.admin.pleaseLogin);
-      return;
-    }
-
+    if (!token) { setError(messages.admin.pleaseLogin); return; }
     try {
-      setError(null);
-      setFeedback(null);
+      setError(null); setFeedback(null);
       await action();
       setFeedback(successMessage);
+      eventBus.emit("drive:actionSuccess", { message: successMessage });
+      eventBus.emit("notify:success", { message: successMessage });
       await loadData();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : messages.admin.actionFailed);
+      const msg = err instanceof ApiError ? err.message : messages.admin.actionFailed;
+      setError(msg);
+      eventBus.emit("drive:actionFailed", { message: msg });
+      eventBus.emit("notify:error", { message: msg });
     }
   }
 
@@ -79,12 +81,11 @@ export function AdminPage({ token, user, messages, config, onConfigChange, onLog
       defaultFolderId: configDraft.defaultFolderId.trim(),
       visibilityMode: configDraft.visibilityMode,
     };
-
-    onConfigChange(normalized);
+    eventBus.emit("config:changed", { config: normalized });
     setConfigDraft(normalized);
-    setFeedback(messages.admin.configSaved);
   }
 
+  /* ── Login form ─────────────────────────────── */
   if (!token || !user) {
     return (
       <section className="page">
@@ -98,24 +99,21 @@ export function AdminPage({ token, user, messages, config, onConfigChange, onLog
 
         <form
           className="login-panel"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onLogin(username, password).catch((err: unknown) => {
-              const message = err instanceof ApiError ? err.message : messages.admin.loginFailed;
-              setError(message);
-            });
+          onSubmit={(e) => {
+            e.preventDefault();
+            eventBus.emit("auth:login", { username, password });
           }}
         >
           <input
             value={username}
-            onChange={(event) => setUsername(event.target.value)}
+            onChange={(e) => setUsername(e.target.value)}
             placeholder={messages.admin.username}
             autoComplete="username"
           />
           <input
             type="password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             placeholder={messages.admin.password}
             autoComplete="current-password"
           />
@@ -126,6 +124,7 @@ export function AdminPage({ token, user, messages, config, onConfigChange, onLog
     );
   }
 
+  /* ── Admin workspace ────────────────────────── */
   return (
     <section className="page">
       <header className="hero-panel">
@@ -139,56 +138,52 @@ export function AdminPage({ token, user, messages, config, onConfigChange, onLog
         </span>
       </header>
 
-      <section className="admin-actions">
+      {/* Runtime configuration section */}
+      <section className="admin-actions config-panel">
         <h2>{messages.admin.configTitle}</h2>
         <div className="inline-fields">
           <input
             value={configDraft.brandName}
-            onChange={(event) => setConfigDraft((prev) => ({ ...prev, brandName: event.target.value }))}
+            onChange={(e) => setConfigDraft((prev) => ({ ...prev, brandName: e.target.value }))}
             placeholder={messages.admin.brandName}
           />
           <input
             value={configDraft.apiBaseUrl}
-            onChange={(event) => setConfigDraft((prev) => ({ ...prev, apiBaseUrl: event.target.value }))}
+            onChange={(e) => setConfigDraft((prev) => ({ ...prev, apiBaseUrl: e.target.value }))}
             placeholder={messages.admin.apiBaseUrl}
           />
           <input
             value={configDraft.defaultFolderId}
-            onChange={(event) => setConfigDraft((prev) => ({ ...prev, defaultFolderId: event.target.value }))}
+            onChange={(e) => setConfigDraft((prev) => ({ ...prev, defaultFolderId: e.target.value }))}
             placeholder={messages.admin.defaultFolderId}
           />
           <select
             value={configDraft.visibilityMode}
-            onChange={(event) =>
+            onChange={(e) =>
               setConfigDraft((prev) => ({
                 ...prev,
-                visibilityMode: event.target.value === "private" ? "private" : "public",
+                visibilityMode: e.target.value === "private" ? "private" : "public",
               }))
             }
           >
-            <option value="public">
-              {messages.admin.visibilityMode}: {messages.admin.publicMode}
-            </option>
-            <option value="private">
-              {messages.admin.visibilityMode}: {messages.admin.privateMode}
-            </option>
+            <option value="public">{messages.admin.visibilityMode}: {messages.admin.publicMode}</option>
+            <option value="private">{messages.admin.visibilityMode}: {messages.admin.privateMode}</option>
           </select>
         </div>
-        <button type="button" onClick={saveConfiguration}>
-          {messages.admin.saveConfig}
-        </button>
+        <button type="button" onClick={saveConfiguration}>{messages.admin.saveConfig}</button>
       </section>
 
+      {/* Content browser */}
       <section className="filters-panel">
         <div className="inline-fields">
           <input
             value={folderId}
-            onChange={(event) => setFolderId(event.target.value)}
+            onChange={(e) => setFolderId(e.target.value)}
             placeholder={messages.common.folderIdOptional}
           />
           <input
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder={messages.common.searchByName}
           />
           <button type="button" onClick={() => loadData()} disabled={loading}>
@@ -205,10 +200,7 @@ export function AdminPage({ token, user, messages, config, onConfigChange, onLog
         labels={messages.common}
         selectedId={selectedItem?.id}
         onOpenFolder={(item) => {
-          if (item.itemType !== "folder") {
-            return;
-          }
-
+          if (item.itemType !== "folder") return;
           setFolderId(item.id);
           loadData(item.id, search).catch(() => undefined);
         }}

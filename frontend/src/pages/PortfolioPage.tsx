@@ -5,14 +5,19 @@ import type { AppConfig } from "../config/appConfig";
 import type { AppMessages } from "../i18n/messages";
 import { getDriveStatus, listItems } from "../api/driveApi";
 import { GalleryGrid } from "../components/GalleryGrid";
+import { FabricCanvas } from "../components/FabricCanvas";
+import { eventBus, useEvent } from "../events";
 import type { DriveItem } from "../types";
+
+type ViewMode = "grid" | "canvas";
 
 interface PortfolioPageProps {
   config: AppConfig;
   messages: AppMessages;
+  token: string | null;
 }
 
-export function PortfolioPage({ config, messages }: PortfolioPageProps) {
+export function PortfolioPage({ config, messages, token: _token }: PortfolioPageProps) {
   const [items, setItems] = useState<DriveItem[]>([]);
   const [folderId, setFolderId] = useState("");
   const [search, setSearch] = useState("");
@@ -20,6 +25,8 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
   const [status, setStatus] = useState<"checking" | "ok" | "error">("checking");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [selectedId, setSelectedId] = useState<string | undefined>();
 
   const activeFolderLabel = useMemo(
     () => (folderId || config.defaultFolderId ? folderId || config.defaultFolderId : messages.portfolio.rootConfigured),
@@ -29,6 +36,7 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
   const loadData = useCallback(async (nextFolderId?: string, nextSearch?: string) => {
     setLoading(true);
     setError(null);
+    eventBus.emit("drive:status", { status: "checking" });
 
     try {
       const response = await listItems({
@@ -38,39 +46,54 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
       });
 
       setItems(response.items);
+      eventBus.emit("gallery:loaded", { items: response.items, folderId: nextFolderId });
     } catch (err) {
       const message = err instanceof ApiError ? err.message : messages.portfolio.unableToLoad;
       setError(message);
+      eventBus.emit("gallery:error", { message });
     } finally {
       setLoading(false);
     }
   }, [config.defaultFolderId, messages.portfolio.unableToLoad]);
 
+  /* ── Bootstrap: check drive status + load data ── */
   useEffect(() => {
     const run = async () => {
       try {
         await getDriveStatus();
         setStatus("ok");
+        eventBus.emit("drive:status", { status: "ok" });
       } catch {
         setStatus("error");
+        eventBus.emit("drive:status", { status: "error" });
       }
     };
-
     run().catch(() => setStatus("error"));
     loadData().catch(() => undefined);
   }, [loadData]);
 
-  function openFolder(item: DriveItem) {
-    if (item.itemType !== "folder") {
-      return;
-    }
-
+  /* ── Event-driven: navigate into folder ──────── */
+  useEvent("gallery:navigate", ({ item }) => {
+    if (item.itemType !== "folder") return;
     setHistory((prev) => (folderId ? [...prev, folderId] : prev));
     setFolderId(item.id);
     loadData(item.id, search).catch(() => undefined);
+  });
+
+  /* ── Event-driven: select item ───────────────── */
+  useEvent("gallery:select", ({ item }) => {
+    setSelectedId(item?.id);
+  });
+
+  /* ── Event-driven: view mode switch ──────────── */
+  useEvent("canvas:viewMode", ({ mode }) => setViewMode(mode));
+
+  function openFolder(item: DriveItem) {
+    eventBus.emit("gallery:navigate", { item });
   }
 
   function goBack() {
+    eventBus.emit("gallery:back");
     setHistory((prev) => {
       const clone = [...prev];
       const previousFolder = clone.pop() ?? "";
@@ -94,18 +117,36 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
       </header>
 
       <section className="filters-panel">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-s)" }}>
+          <div className="view-toggle">
+            <button
+              type="button"
+              className={viewMode === "grid" ? "active" : ""}
+              onClick={() => { setViewMode("grid"); eventBus.emit("canvas:viewMode", { mode: "grid" }); }}
+            >
+              Grid
+            </button>
+            <button
+              type="button"
+              className={viewMode === "canvas" ? "active" : ""}
+              onClick={() => { setViewMode("canvas"); eventBus.emit("canvas:viewMode", { mode: "canvas" }); }}
+            >
+              Canvas
+            </button>
+          </div>
+        </div>
         <div className="inline-fields">
           <input
             value={folderId}
-            onChange={(event) => setFolderId(event.target.value)}
+            onChange={(e) => setFolderId(e.target.value)}
             placeholder={messages.common.folderIdOptional}
           />
           <input
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder={messages.common.searchByName}
           />
-          <button type="button" onClick={() => loadData(folderId, search)} disabled={loading}>
+          <button type="button" onClick={() => { eventBus.emit("gallery:load", { folderId, search }); loadData(folderId, search); }} disabled={loading}>
             {loading ? messages.common.loading : messages.common.refresh}
           </button>
           <button type="button" onClick={goBack} disabled={!history.length || loading} className="ghost">
@@ -116,11 +157,18 @@ export function PortfolioPage({ config, messages }: PortfolioPageProps) {
       </section>
 
       {error ? <p className="error-banner">{error}</p> : null}
-      <GalleryGrid
-        items={items}
-        labels={messages.common}
-        onOpenFolder={openFolder}
-      />
+
+      {viewMode === "canvas" ? (
+        <FabricCanvas items={items} selectedId={selectedId} labels={messages.common} />
+      ) : (
+        <GalleryGrid
+          items={items}
+          labels={messages.common}
+          selectedId={selectedId}
+          onOpenFolder={openFolder}
+          onSelectItem={(item) => eventBus.emit("gallery:select", { item })}
+        />
+      )}
     </section>
   );
 }

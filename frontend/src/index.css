@@ -1,61 +1,88 @@
+/* ══════════════════════════════════════════════════════════
+ *  ArtGallery – Fluent / Modern UI Design Tokens & Base
+ * ══════════════════════════════════════════════════════════ */
+
 :root {
-  --paper: #fffdf8;
-  --line: #dbcdb8;
-  --ink-900: #1f241f;
-  --ink-800: #30362e;
-  --ink-700: #475041;
-  --ink-600: #636d5d;
-  --ink-500: #7d8778;
-  --ink-100: #ece5d7;
+  /* ── Colour Tokens  (Fluent-inspired) ────────── */
+  --bg-base: #f5f5f5;
+  --bg-card: #ffffff;
+  --bg-acrylic: rgba(255, 255, 255, 0.72);
+  --bg-elevated: #ffffff;
+  --bg-subtle: #fafafa;
+  --bg-brand: #0078d4;
+  --bg-brand-hover: #106ebe;
+  --bg-danger: #d13438;
+  --bg-success: #107c10;
 
-  --brand-700: #9f4a24;
-  --brand-500: #c66b34;
-  --brand-soft: #f5e4cc;
+  --text-primary: #1b1b1f;
+  --text-secondary: #5f6368;
+  --text-tertiary: #8a8a8e;
+  --text-on-brand: #ffffff;
+  --text-danger: #a4262c;
+  --text-success: #0b6a0b;
+  --text-link: #0078d4;
 
-  --elev-soft:
-    0 12px 22px -16px rgba(86, 54, 28, 0.45), 0 6px 10px -8px rgba(86, 54, 28, 0.25);
+  --border-default: #e0e0e0;
+  --border-strong: #c4c4c4;
+  --border-brand: #0078d4;
 
-  --font-display: "Palatino Linotype", "Book Antiqua", serif;
-  --font-sans: "Trebuchet MS", "Segoe UI Variable", "Segoe UI", sans-serif;
+  /* ── Depth / Elevation ─────────────────────── */
+  --shadow-2: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-4: 0 2px 4px rgba(0,0,0,0.04), 0 4px 8px rgba(0,0,0,0.08);
+  --shadow-8: 0 4px 8px rgba(0,0,0,0.04), 0 8px 16px rgba(0,0,0,0.08);
+  --shadow-16: 0 8px 16px rgba(0,0,0,0.06), 0 16px 32px rgba(0,0,0,0.1);
+
+  /* ── Typography ────────────────────────────── */
+  --font-base: "Inter", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Cascadia Code", "Fira Code", "Consolas", monospace;
+
+  /* ── Spacing ───────────────────────────────── */
+  --space-xs: 4px;
+  --space-s: 8px;
+  --space-m: 16px;
+  --space-l: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+
+  /* ── Radius ────────────────────────────────── */
+  --radius-s: 6px;
+  --radius-m: 10px;
+  --radius-l: 16px;
+  --radius-full: 9999px;
+
+  /* ── Motion ────────────────────────────────── */
+  --motion-fast: 120ms cubic-bezier(0.33, 0, 0.67, 1);
+  --motion-normal: 250ms cubic-bezier(0.33, 0, 0.67, 1);
+  --motion-slow: 400ms cubic-bezier(0.33, 0, 0.67, 1);
 }
 
-* {
-  box-sizing: border-box;
-}
+/* ── Reset ──────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html,
-body,
-#root {
-  min-height: 100%;
-}
+html, body, #root { min-height: 100vh; }
 
 body {
-  margin: 0;
-  font-family: var(--font-sans);
-  color: var(--ink-800);
-  background:
-    radial-gradient(1200px 500px at 100% -10%, #f2dbb9 0%, transparent 60%),
-    radial-gradient(800px 400px at -10% -10%, #d8e6ea 0%, transparent 55%),
-    var(--paper);
+  font-family: var(--font-base);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-h1,
-h2,
-h3 {
-  font-family: var(--font-display);
-  color: var(--ink-900);
-  margin: 0;
-}
+h1, h2, h3, h4 { font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+h1 { font-size: clamp(1.5rem, 2.4vw, 2rem); }
+h2 { font-size: clamp(1.15rem, 1.8vw, 1.5rem); }
+h3 { font-size: 1rem; font-weight: 600; }
 
-h1 {
-  margin-top: 0.25rem;
-  font-size: clamp(1.65rem, 2.8vw, 2.35rem);
-}
+a { color: var(--text-link); text-decoration: none; }
+a:hover { text-decoration: underline; }
 
-h2 {
-  font-size: clamp(1.2rem, 2.1vw, 1.65rem);
-}
+img { max-width: 100%; display: block; }
 
-p {
-  margin: 0;
-}
+/* ── Scrollbar (Chromium) ───────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }

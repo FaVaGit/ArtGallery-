@@ -1,84 +1,89 @@
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
+import { eventBus, useEvent } from "./events";
 import { setApiBaseUrl } from "./api/client";
 import { getCurrentUser, login } from "./api/authApi";
 import { loadAppConfig, saveAppConfig, type AppConfig } from "./config/appConfig";
 import { TopNav } from "./components/TopNav";
+import { Toaster } from "./components/Toaster";
 import { getMessages, type Language } from "./i18n/messages";
 import { AdminPage } from "./pages/AdminPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import type { AuthUser } from "./types";
 import "./App.css";
 
-const TOKEN_STORAGE_KEY = "artgallery.auth.token";
-const LANGUAGE_STORAGE_KEY = "artgallery.ui.language";
+const TOKEN_KEY = "artgallery.auth.token";
+const LANG_KEY = "artgallery.ui.language";
 
 function App() {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_STORAGE_KEY));
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [user, setUser] = useState<AuthUser | null>(null);
   const [language, setLanguage] = useState<Language>(() => {
-    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-
-    if (stored === "it" || stored === "en") {
-      return stored;
-    }
-
+    const stored = localStorage.getItem(LANG_KEY);
+    if (stored === "it" || stored === "en") return stored;
     return navigator.language.toLowerCase().startsWith("it") ? "it" : "en";
   });
   const [config, setConfig] = useState<AppConfig>(() => loadAppConfig());
   const [bootstrapping, setBootstrapping] = useState(true);
   const messages = getMessages(language);
 
+  /* ── Persist language ──────────────────────── */
   useEffect(() => {
-    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    localStorage.setItem(LANG_KEY, language);
   }, [language]);
 
+  /* ── Persist config & apply runtime base URL ── */
   useEffect(() => {
     saveAppConfig(config);
     setApiBaseUrl(config.apiBaseUrl);
   }, [config]);
 
+  /* ── Restore session on mount ──────────────── */
   useEffect(() => {
-    const restoreSession = async () => {
-      if (!token) {
-        setUser(null);
-        setBootstrapping(false);
-        return;
-      }
-
+    const restore = async () => {
+      if (!token) { setUser(null); setBootstrapping(false); return; }
       try {
-        const response = await getCurrentUser(token);
-        setUser(response.user);
+        const res = await getCurrentUser(token);
+        setUser(res.user);
+        eventBus.emit("auth:sessionRestored", { user: res.user });
       } catch {
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
-      } finally {
-        setBootstrapping(false);
-      }
+        setToken(null); setUser(null);
+        localStorage.removeItem(TOKEN_KEY);
+      } finally { setBootstrapping(false); }
     };
-
-    restoreSession().catch(() => {
-      setToken(null);
-      setUser(null);
-      setBootstrapping(false);
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
-    });
+    restore().catch(() => { setToken(null); setUser(null); setBootstrapping(false); localStorage.removeItem(TOKEN_KEY); });
   }, [token]);
 
-  async function handleLogin(username: string, password: string): Promise<void> {
-    const response = await login(username, password);
-    setToken(response.token);
-    setUser(response.user);
-    localStorage.setItem(TOKEN_STORAGE_KEY, response.token);
-  }
+  /* ── Event-driven handlers ─────────────────── */
+  useEvent("auth:login", async ({ username, password }) => {
+    try {
+      const res = await login(username, password);
+      setToken(res.token);
+      setUser(res.user);
+      localStorage.setItem(TOKEN_KEY, res.token);
+      eventBus.emit("auth:loginSuccess", { token: res.token, user: res.user });
+      eventBus.emit("notify:success", { message: messages.admin.loginSuccess ?? `Welcome, ${res.user.username}` });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : messages.admin.loginFailed;
+      eventBus.emit("auth:loginFailed", { error: msg });
+      eventBus.emit("notify:error", { message: msg });
+    }
+  });
 
-  function handleLogout() {
+  useEvent("auth:logout", () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-  }
+    localStorage.removeItem(TOKEN_KEY);
+    eventBus.emit("notify:info", { message: messages.nav.loggedOut ?? "Logged out" });
+  });
+
+  useEvent("i18n:changed", ({ language: lang }) => setLanguage(lang));
+
+  useEvent("config:changed", ({ config: newConfig }) => {
+    setConfig(newConfig);
+    eventBus.emit("notify:success", { message: messages.admin.configSaved });
+  });
 
   if (bootstrapping) {
     return <div className="boot-screen">{messages.common.loadingWorkspace}</div>;
@@ -91,13 +96,11 @@ function App() {
         user={user}
         language={language}
         labels={messages.nav}
-        onLanguageChange={setLanguage}
-        onLogout={handleLogout}
       />
 
       <main>
         <Routes>
-          <Route path="/" element={<PortfolioPage messages={messages} config={config} />} />
+          <Route path="/" element={<PortfolioPage messages={messages} config={config} token={token} />} />
           <Route
             path="/admin"
             element={
@@ -106,14 +109,14 @@ function App() {
                 user={user}
                 messages={messages}
                 config={config}
-                onConfigChange={setConfig}
-                onLogin={handleLogin}
               />
             }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+
+      <Toaster />
     </div>
   );
 }

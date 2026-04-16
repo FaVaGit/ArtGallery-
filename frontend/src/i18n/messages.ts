@@ -7,6 +7,7 @@ interface Messages {
     guest: string;
     logout: string;
     language: string;
+    loggedOut: string;
   };
   common: {
     loadingWorkspace: string;
@@ -42,6 +43,7 @@ interface Messages {
     password: string;
     login: string;
     loginFailed: string;
+    loginSuccess: string;
     workspaceEyebrow: string;
     workspaceTitle: string;
     workspaceSubtitle: string;
@@ -97,6 +99,7 @@ const messages: Record<Language, Messages> = {
       guest: "Guest",
       logout: "Logout",
       language: "Language",
+      loggedOut: "You have been logged out.",
     },
     common: {
       loadingWorkspace: "Loading workspace...",
@@ -132,6 +135,7 @@ const messages: Record<Language, Messages> = {
       password: "Password",
       login: "Login",
       loginFailed: "Login failed",
+      loginSuccess: "Welcome! Login successful.",
       workspaceEyebrow: "Admin Workspace",
       workspaceTitle: "Drive Content Management",
       workspaceSubtitle: "Folder operations are protected by role-based authorization.",
@@ -183,6 +187,7 @@ const messages: Record<Language, Messages> = {
       guest: "Ospite",
       logout: "Esci",
       language: "Lingua",
+      loggedOut: "Sei stato disconnesso.",
     },
     common: {
       loadingWorkspace: "Caricamento workspace...",
@@ -218,6 +223,7 @@ const messages: Record<Language, Messages> = {
       password: "Password",
       login: "Accedi",
       loginFailed: "Accesso non riuscito",
+      loginSuccess: "Benvenuto! Accesso riuscito.",
       workspaceEyebrow: "Area Admin",
       workspaceTitle: "Gestione Contenuti Drive",
       workspaceSubtitle: "Le operazioni sulle cartelle sono protette da autorizzazione basata sui ruoli.",
