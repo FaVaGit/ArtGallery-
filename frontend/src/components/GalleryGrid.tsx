@@ -12,8 +12,10 @@ interface GalleryGridProps {
     view: string;
   };
   selectedId?: string;
+  folderPreviews?: Record<string, DriveItem[]>;
   onOpenFolder: (item: DriveItem) => void;
   onSelectItem?: (item: DriveItem) => void;
+  onViewFile?: (item: DriveItem) => void;
 }
 
 function formatDate(value: string | null): string {
@@ -30,7 +32,7 @@ function formatDate(value: string | null): string {
   return date.toLocaleDateString();
 }
 
-export function GalleryGrid({ items, labels, selectedId, onOpenFolder, onSelectItem }: GalleryGridProps) {
+export function GalleryGrid({ items, labels, selectedId, folderPreviews, onOpenFolder, onSelectItem, onViewFile }: GalleryGridProps) {
   if (!items.length) {
     return <p className="empty">{labels.noContent}</p>;
   }
@@ -42,6 +44,7 @@ export function GalleryGrid({ items, labels, selectedId, onOpenFolder, onSelectI
         const thumb = item.thumbnailLink
           ? `${getApiBaseUrl()}/drive/thumbnail/${encodeURIComponent(item.id)}?size=220`
           : null;
+        const previews = isFolder ? folderPreviews?.[item.id] : undefined;
 
         return (
           <article key={item.id} className={`gallery-card ${selectedId === item.id ? "selected" : ""}`}>
@@ -53,12 +56,27 @@ export function GalleryGrid({ items, labels, selectedId, onOpenFolder, onSelectI
             />
 
             <div className="thumb">
-              {thumb ? <img src={thumb} alt={item.name} loading="lazy" /> : <span>{isFolder ? "Folder" : "Media"}</span>}
+              {isFolder && previews && previews.length > 0 ? (
+                <div className="folder-preview-grid">
+                  {previews.slice(0, 4).map((p) => (
+                    <img
+                      key={p.id}
+                      src={`${getApiBaseUrl()}/drive/thumbnail/${encodeURIComponent(p.id)}?size=110`}
+                      alt={p.name}
+                      loading="lazy"
+                    />
+                  ))}
+                </div>
+              ) : thumb ? (
+                <img src={thumb} alt={item.name} loading="lazy" />
+              ) : (
+                <span>{isFolder ? "📁" : "🖼"}</span>
+              )}
             </div>
 
             <div className="meta">
               <h3 title={item.name}>{item.name}</h3>
-              <p>{isFolder ? labels.folder : labels.file}</p>
+              <p>{isFolder ? labels.folder : labels.file}{isFolder && previews ? ` · ${previews.length} items` : ""}</p>
               <p>{labels.updated}: {formatDate(item.modifiedTime)}</p>
             </div>
 
@@ -68,9 +86,9 @@ export function GalleryGrid({ items, labels, selectedId, onOpenFolder, onSelectI
                   {labels.open}
                 </button>
               ) : (
-                <a href={item.webViewLink ?? "#"} target="_blank" rel="noreferrer" className="button-link">
+                <button type="button" className="button-link" onClick={() => onViewFile?.(item)}>
                   {labels.view}
-                </a>
+                </button>
               )}
             </div>
           </article>
