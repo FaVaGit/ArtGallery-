@@ -52,10 +52,10 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
 
     const cols = Math.max(1, Math.floor((fc.width! - GAP) / (CARD_W + GAP)));
 
-    /* Fabric v7: object left/top positions the CENTER of the object (default origin).
-       Helper converts top-left coords → center coords for a given size. */
-    const cx = (left: number, w: number) => left + w / 2;
-    const cy = (top: number, h: number) => top + h / 2;
+    /* Fabric v7 defaults to center origin; force top-left on all objects
+       so coordinates work like v6.  The LayoutManager shifts children
+       uniformly, preserving relative positions. */
+    const TL = { originX: "left" as const, originY: "top" as const };
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
@@ -66,10 +66,11 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
       const isFolder = item.itemType === "folder";
       const isSelected = item.id === selectedId;
 
-      /* Card background — center at (CARD_W/2, CARD_H/2) */
+      /* Card background */
       const bg = new Rect({
-        left: cx(0, CARD_W),
-        top: cy(0, CARD_H),
+        ...TL,
+        left: 0,
+        top: 0,
         width: CARD_W,
         height: CARD_H,
         rx: CORNER_R,
@@ -97,12 +98,10 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
             const scX = halfW / (img.width || halfW);
             const scY = halfH / (img.height || halfH);
             const sc = Math.max(scX, scY);
-            const visW = (img.width || halfW) * sc;
-            const visH = (img.height || halfH) * sc;
-            img.set({ left: cx(px, visW), top: cy(py, visH), scaleX: sc, scaleY: sc, clipPath: new Rect({ width: halfW / sc, height: halfH / sc }) });
+            img.set({ ...TL, left: px, top: py, scaleX: sc, scaleY: sc, clipPath: new Rect({ ...TL, width: halfW / sc, height: halfH / sc }) });
             thumbObjects.push(img);
           } catch {
-            thumbObjects.push(new Rect({ width: halfW, height: halfH, left: cx(px, halfW), top: cy(py, halfH), fill: "#e8ddd0" }));
+            thumbObjects.push(new Rect({ ...TL, width: halfW, height: halfH, left: px, top: py, fill: "#e8ddd0" }));
           }
         }
       } else {
@@ -118,20 +117,18 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
             const scX = tw / (img.width || tw);
             const scY = th / (img.height || th);
             const sc = Math.max(scX, scY);
-            const visW = (img.width || tw) * sc;
-            const visH = (img.height || th) * sc;
-            img.set({ left: cx(1, visW), top: cy(1, visH), scaleX: sc, scaleY: sc, clipPath: new Rect({ width: tw / sc, height: th / sc, rx: CORNER_R / sc, ry: CORNER_R / sc }) });
+            img.set({ ...TL, left: 1, top: 1, scaleX: sc, scaleY: sc, clipPath: new Rect({ ...TL, width: tw / sc, height: th / sc, rx: CORNER_R / sc, ry: CORNER_R / sc }) });
             thumbObjects.push(img);
           } catch {
             thumbObjects.push(new Rect({
-              width: tw, height: th, rx: CORNER_R, ry: CORNER_R,
-              left: cx(1, tw), top: cy(1, th), fill: isFolder ? "#d4e7f7" : "#e8dcc6",
+              ...TL, width: tw, height: th, rx: CORNER_R, ry: CORNER_R,
+              left: 1, top: 1, fill: isFolder ? "#d4e7f7" : "#e8dcc6",
             }));
           }
         } else {
           thumbObjects.push(new Rect({
-            width: tw, height: th, rx: CORNER_R, ry: CORNER_R,
-            left: cx(1, tw), top: cy(1, th), fill: isFolder ? "#d4e7f7" : "#e8dcc6",
+            ...TL, width: tw, height: th, rx: CORNER_R, ry: CORNER_R,
+            left: 1, top: 1, fill: isFolder ? "#d4e7f7" : "#e8dcc6",
           }));
         }
       }
@@ -140,33 +137,37 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
       const hasRealThumb = item.thumbnailLink || (isFolder && previews && previews.length > 0);
       if (!hasRealThumb) {
         thumbObjects.push(new FabricText(isFolder ? "\uD83D\uDCC1" : "\uD83D\uDDBC", {
+          ...TL,
           fontSize: 36,
-          left: CARD_W / 2,
-          top: THUMB_H / 2,
+          left: CARD_W / 2 - 18,
+          top: THUMB_H / 2 - 18,
           selectable: false,
         }));
       }
 
       /* Item name */
       const nameText = new FabricText(item.name.length > 24 ? item.name.slice(0, 22) + "\u2026" : item.name, {
+        ...TL,
         fontSize: 13,
         fontFamily: "'Playfair Display', Georgia, serif",
         fontWeight: "600",
         fill: "#2c2418",
         left: 12,
-        top: THUMB_H + 16,
+        top: THUMB_H + 12,
       });
 
       /* Type label */
       const typeText = new FabricText(isFolder ? labels.folder : labels.file, {
+        ...TL,
         fontSize: 11,
         fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
         fill: "#6b5e4f",
         left: 12,
-        top: THUMB_H + 36,
+        top: THUMB_H + 32,
       });
 
       const group = new Group([bg, ...thumbObjects, nameText, typeText], {
+        ...TL,
         left: x,
         top: y,
         selectable: false,
