@@ -1,5 +1,6 @@
 import type { DriveItem } from "../types";
 import { getApiBaseUrl } from "../api/client";
+import { ShareButton } from "./ShareButton";
 
 interface GalleryGridProps {
   items: DriveItem[];
@@ -10,6 +11,12 @@ interface GalleryGridProps {
     updated: string;
     open: string;
     view: string;
+  };
+  shareLabels?: {
+    share: string;
+    copyLink: string;
+    copiedToClipboard: string;
+    shareOn: string;
   };
   selectedId?: string;
   folderPreviews?: Record<string, DriveItem[]>;
@@ -32,14 +39,14 @@ function formatDate(value: string | null): string {
   return date.toLocaleDateString();
 }
 
-export function GalleryGrid({ items, labels, selectedId, folderPreviews, onOpenFolder, onSelectItem, onViewFile }: GalleryGridProps) {
+export function GalleryGrid({ items, labels, shareLabels, selectedId, folderPreviews, onOpenFolder, onSelectItem, onViewFile }: GalleryGridProps) {
   if (!items.length) {
     return <p className="empty">{labels.noContent}</p>;
   }
 
   return (
     <div className="gallery-grid">
-      {items.map((item) => {
+      {items.map((item, index) => {
         const isFolder = item.itemType === "folder";
         const thumb = item.thumbnailLink
           ? `${getApiBaseUrl()}/drive/thumbnail/${encodeURIComponent(item.id)}?size=220`
@@ -47,7 +54,11 @@ export function GalleryGrid({ items, labels, selectedId, folderPreviews, onOpenF
         const previews = isFolder ? folderPreviews?.[item.id] : undefined;
 
         return (
-          <article key={item.id} className={`gallery-card ${selectedId === item.id ? "selected" : ""}`}>
+          <article
+            key={item.id}
+            className={`gallery-card ${selectedId === item.id ? "selected" : ""}`}
+            style={{ "--i": index } as React.CSSProperties}
+          >
             <button
               type="button"
               className="select-overlay"
@@ -96,7 +107,10 @@ export function GalleryGrid({ items, labels, selectedId, folderPreviews, onOpenF
             </div>
 
             <div className="meta">
-              <h3 title={item.name}>{item.name}</h3>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <h3 title={item.name}>{item.name}</h3>
+                {shareLabels && !isFolder && <ShareButton item={item} labels={shareLabels} variant="icon" />}
+              </div>
               <p>{isFolder ? labels.folder : labels.file}{isFolder && previews ? ` · ${previews.length} items` : ""}</p>
               <p>{labels.updated}: {formatDate(item.modifiedTime)}</p>
             </div>

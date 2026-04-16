@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import multer from "multer";
 
 import {
   checkDriveConnection,
@@ -11,11 +12,17 @@ import {
   listItems,
   moveItem,
   renameItem,
+  uploadFile,
 } from "../services/googleDriveService.js";
 import { requireAuth, requireRole } from "../middleware/authMiddleware.js";
 import { HttpError } from "../utils/httpError.js";
 
 const router = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB
+});
 
 const listItemsQuerySchema = z.object({
   folderId: z.string().min(1).optional(),
@@ -225,6 +232,34 @@ router.get("/thumbnail/:fileId", async (req, res, next) => {
       "Access-Control-Allow-Origin": "*",
     });
     res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/upload", requireAuth, requireRole(["admin"]), upload.single("file"), async (req, res, next) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      throw new HttpError(400, "No file provided");
+    }
+
+    const parentId = typeof req.body.parentId === "string" && req.body.parentId
+      ? req.body.parentId
+      : getRequiredRootFolderId();
+
+    const name = typeof req.body.name === "string" && req.body.name
+      ? req.body.name
+      : file.originalname;
+
+    const data = await uploadFile({
+      buffer: file.buffer,
+      mimeType: file.mimetype,
+      name,
+      parentId,
+    });
+
+    res.status(201).json(data);
   } catch (error) {
     next(error);
   }

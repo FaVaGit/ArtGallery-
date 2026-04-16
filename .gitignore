@@ -26,3 +26,7 @@ backend/.env.*
 .DS_Store
 Thumbs.db
 .vscode/*.log
+
+# SQLite database
+backend/data/
+data/

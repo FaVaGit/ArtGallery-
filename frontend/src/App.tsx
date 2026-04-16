@@ -7,7 +7,7 @@ import { getCurrentUser, login } from "./api/authApi";
 import { loadAppConfig, saveAppConfig, type AppConfig } from "./config/appConfig";
 import { TopNav } from "./components/TopNav";
 import { Toaster } from "./components/Toaster";
-import { getMessages, type Language } from "./i18n/messages";
+import { getMessages, type Language, type ThemeMode } from "./i18n/messages";
 import { AdminPage } from "./pages/AdminPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import type { AuthUser } from "./types";
@@ -15,6 +15,14 @@ import "./App.css";
 
 const TOKEN_KEY = "artgallery.auth.token";
 const LANG_KEY = "artgallery.ui.language";
+const THEME_KEY = "artgallery.ui.theme";
+
+function resolveTheme(mode: ThemeMode): "light" | "dark" {
+  if (mode === "system") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  return mode;
+}
 
 function App() {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
@@ -24,9 +32,45 @@ function App() {
     if (stored === "it" || stored === "en") return stored;
     return navigator.language.toLowerCase().startsWith("it") ? "it" : "en";
   });
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === "light" || stored === "dark" || stored === "system") return stored;
+    return "system";
+  });
   const [config, setConfig] = useState<AppConfig>(() => loadAppConfig());
   const [bootstrapping, setBootstrapping] = useState(true);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const messages = getMessages(language);
+
+  /* ── Theme ─────────────────────────────────── */
+  useEffect(() => {
+    localStorage.setItem(THEME_KEY, themeMode);
+    document.documentElement.setAttribute("data-theme", resolveTheme(themeMode));
+
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => {
+      if (themeMode === "system") {
+        document.documentElement.setAttribute("data-theme", mq.matches ? "dark" : "light");
+      }
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [themeMode]);
+
+  /* ── Offline detection ─────────────────────── */
+  useEffect(() => {
+    const goOffline = () => {
+      setIsOffline(true);
+      eventBus.emit("notify:error", { message: messages.common.offline });
+    };
+    const goOnline = () => {
+      setIsOffline(false);
+      eventBus.emit("notify:success", { message: messages.common.backOnline });
+    };
+    window.addEventListener("offline", goOffline);
+    window.addEventListener("online", goOnline);
+    return () => { window.removeEventListener("offline", goOffline); window.removeEventListener("online", goOnline); };
+  }, [messages.common.offline, messages.common.backOnline]);
 
   /* ── Persist language ──────────────────────── */
   useEffect(() => {
@@ -79,6 +123,7 @@ function App() {
   });
 
   useEvent("i18n:changed", ({ language: lang }) => setLanguage(lang));
+  useEvent("theme:changed", ({ theme }) => setThemeMode(theme));
 
   useEvent("config:changed", ({ config: newConfig }) => {
     setConfig(newConfig);
@@ -95,8 +140,11 @@ function App() {
         brandName={config.brandName}
         user={user}
         language={language}
+        themeMode={themeMode}
         labels={messages.nav}
       />
+
+      {isOffline && <div className="offline-banner">{messages.common.offline}</div>}
 
       <main>
         <Routes>

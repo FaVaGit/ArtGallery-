@@ -93,6 +93,48 @@ a:hover { color: var(--bg-brand-hover); text-decoration: none; }
 
 img { max-width: 100%; display: block; }
 
+/* ══════════════════════════════════════════════════════════
+ *  Dark Theme — Deep Atelier Nocturne
+ * ══════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg-base: #1a1612;
+  --bg-card: #252017;
+  --bg-acrylic: rgba(26, 22, 18, 0.88);
+  --bg-elevated: #2a241c;
+  --bg-subtle: #221d16;
+  --bg-brand: #b89b6a;
+  --bg-brand-hover: #d4b67e;
+  --bg-danger: #d45555;
+  --bg-success: #6aa06a;
+  --bg-hero: linear-gradient(135deg, #1a1612 0%, #252017 40%, #2e271e 100%);
+  --bg-hero-overlay: linear-gradient(180deg, rgba(26,22,18,0) 60%, rgba(26,22,18,1) 100%);
+
+  --accent-gold: #d4b67e;
+  --accent-terracotta: #d4956a;
+  --accent-sage: #9ab68a;
+  --accent-navy: #6a7fa0;
+
+  --text-primary: #f0e8da;
+  --text-secondary: #b8a892;
+  --text-tertiary: #8a7e6e;
+  --text-on-brand: #1a1612;
+  --text-danger: #e88;
+  --text-success: #6aba6a;
+  --text-link: #d4b67e;
+
+  --border-default: #3a3228;
+  --border-strong: #4a3e32;
+  --border-brand: #b89b6a;
+
+  --shadow-2: 0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.25);
+  --shadow-4: 0 2px 8px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.25);
+  --shadow-8: 0 4px 16px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.3);
+  --shadow-16: 0 8px 32px rgba(0,0,0,0.3), 0 16px 48px rgba(0,0,0,0.35);
+  --shadow-card-hover: 0 12px 40px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.25);
+
+  color-scheme: dark;
+}
+
 /* ── Scrollbar (Chromium) ───────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

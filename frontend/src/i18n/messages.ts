@@ -1,4 +1,5 @@
 export type Language = "en" | "it";
+export type ThemeMode = "light" | "dark" | "system";
 
 interface Messages {
   nav: {
@@ -8,6 +9,10 @@ interface Messages {
     logout: string;
     language: string;
     loggedOut: string;
+    theme: string;
+    themeLight: string;
+    themeDark: string;
+    themeSystem: string;
   };
   common: {
     loadingWorkspace: string;
@@ -21,6 +26,9 @@ interface Messages {
     updated: string;
     open: string;
     view: string;
+    close: string;
+    offline: string;
+    backOnline: string;
   };
   portfolio: {
     eyebrow: string;
@@ -37,6 +45,61 @@ interface Messages {
     home: string;
     searchPlaceholder: string;
     itemCount: string;
+  };
+  filter: {
+    typeAll: string;
+    typeFolders: string;
+    typeImages: string;
+    sortNameAsc: string;
+    sortNameDesc: string;
+    sortNewest: string;
+    sortOldest: string;
+    sortBy: string;
+    filterType: string;
+  };
+  share: {
+    share: string;
+    copyLink: string;
+    copiedToClipboard: string;
+    shareOn: string;
+  };
+  social: {
+    comments: string;
+    addComment: string;
+    commentPlaceholder: string;
+    post: string;
+    noComments: string;
+    deleteComment: string;
+    rating: string;
+    yourRating: string;
+    averageRating: string;
+    loginToComment: string;
+    loginToRate: string;
+  };
+  upload: {
+    title: string;
+    dragDrop: string;
+    browseFiles: string;
+    uploading: string;
+    uploadComplete: string;
+    uploadFailed: string;
+    fileTypeError: string;
+    sizeLimit: string;
+    selectFiles: string;
+  };
+  analytics: {
+    title: string;
+    totalViews: string;
+    uniqueItems: string;
+    totalSearches: string;
+    viewsOverTime: string;
+    topItems: string;
+    topSearches: string;
+    today: string;
+    thisWeek: string;
+    thisMonth: string;
+    allTime: string;
+    noData: string;
   };
   admin: {
     accessEyebrow: string;
@@ -108,6 +171,10 @@ const messages: Record<Language, Messages> = {
       logout: "Logout",
       language: "Language",
       loggedOut: "You have been logged out.",
+      theme: "Theme",
+      themeLight: "Light",
+      themeDark: "Dark",
+      themeSystem: "System",
     },
     common: {
       loadingWorkspace: "Loading workspace...",
@@ -121,6 +188,9 @@ const messages: Record<Language, Messages> = {
       updated: "Updated",
       open: "Open",
       view: "View",
+      close: "Close",
+      offline: "You are offline. Some features may be unavailable.",
+      backOnline: "Back online!",
     },
     portfolio: {
       eyebrow: "Portfolio",
@@ -137,6 +207,61 @@ const messages: Record<Language, Messages> = {
       home: "Home",
       searchPlaceholder: "Search works…",
       itemCount: "{count} items",
+    },
+    filter: {
+      typeAll: "All",
+      typeFolders: "Folders only",
+      typeImages: "Images only",
+      sortNameAsc: "Name A–Z",
+      sortNameDesc: "Name Z–A",
+      sortNewest: "Newest first",
+      sortOldest: "Oldest first",
+      sortBy: "Sort",
+      filterType: "Type",
+    },
+    share: {
+      share: "Share",
+      copyLink: "Copy link",
+      copiedToClipboard: "Link copied to clipboard!",
+      shareOn: "Share on",
+    },
+    social: {
+      comments: "Comments",
+      addComment: "Add a comment",
+      commentPlaceholder: "Write a comment…",
+      post: "Post",
+      noComments: "No comments yet. Be the first!",
+      deleteComment: "Delete",
+      rating: "Rating",
+      yourRating: "Your rating",
+      averageRating: "Average",
+      loginToComment: "Login to comment",
+      loginToRate: "Login to rate",
+    },
+    upload: {
+      title: "Upload Files",
+      dragDrop: "Drag and drop files here, or",
+      browseFiles: "browse files",
+      uploading: "Uploading…",
+      uploadComplete: "Upload complete!",
+      uploadFailed: "Upload failed",
+      fileTypeError: "Unsupported file type. Use JPEG, PNG, WebP, or PDF.",
+      sizeLimit: "File size must be under 25 MB.",
+      selectFiles: "Select files",
+    },
+    analytics: {
+      title: "Analytics Dashboard",
+      totalViews: "Total Views",
+      uniqueItems: "Unique Items Viewed",
+      totalSearches: "Total Searches",
+      viewsOverTime: "Views Over Time",
+      topItems: "Most Viewed Items",
+      topSearches: "Top Search Terms",
+      today: "Today",
+      thisWeek: "This Week",
+      thisMonth: "This Month",
+      allTime: "All Time",
+      noData: "No analytics data yet.",
     },
     admin: {
       accessEyebrow: "Administrator Access",
@@ -204,6 +329,10 @@ const messages: Record<Language, Messages> = {
       logout: "Esci",
       language: "Lingua",
       loggedOut: "Sei stato disconnesso.",
+      theme: "Tema",
+      themeLight: "Chiaro",
+      themeDark: "Scuro",
+      themeSystem: "Sistema",
     },
     common: {
       loadingWorkspace: "Caricamento workspace...",
@@ -217,6 +346,9 @@ const messages: Record<Language, Messages> = {
       updated: "Aggiornato",
       open: "Apri",
       view: "Visualizza",
+      close: "Chiudi",
+      offline: "Sei offline. Alcune funzionalità potrebbero non essere disponibili.",
+      backOnline: "Di nuovo online!",
     },
     portfolio: {
       eyebrow: "Portfolio",
@@ -233,6 +365,61 @@ const messages: Record<Language, Messages> = {
       home: "Home",
       searchPlaceholder: "Cerca opere…",
       itemCount: "{count} elementi",
+    },
+    filter: {
+      typeAll: "Tutti",
+      typeFolders: "Solo cartelle",
+      typeImages: "Solo immagini",
+      sortNameAsc: "Nome A–Z",
+      sortNameDesc: "Nome Z–A",
+      sortNewest: "Più recenti",
+      sortOldest: "Meno recenti",
+      sortBy: "Ordina",
+      filterType: "Tipo",
+    },
+    share: {
+      share: "Condividi",
+      copyLink: "Copia link",
+      copiedToClipboard: "Link copiato negli appunti!",
+      shareOn: "Condividi su",
+    },
+    social: {
+      comments: "Commenti",
+      addComment: "Aggiungi un commento",
+      commentPlaceholder: "Scrivi un commento…",
+      post: "Pubblica",
+      noComments: "Nessun commento ancora. Sii il primo!",
+      deleteComment: "Elimina",
+      rating: "Valutazione",
+      yourRating: "La tua valutazione",
+      averageRating: "Media",
+      loginToComment: "Accedi per commentare",
+      loginToRate: "Accedi per valutare",
+    },
+    upload: {
+      title: "Carica File",
+      dragDrop: "Trascina i file qui, oppure",
+      browseFiles: "sfoglia file",
+      uploading: "Caricamento…",
+      uploadComplete: "Caricamento completato!",
+      uploadFailed: "Caricamento non riuscito",
+      fileTypeError: "Tipo di file non supportato. Usa JPEG, PNG, WebP o PDF.",
+      sizeLimit: "Il file deve essere inferiore a 25 MB.",
+      selectFiles: "Seleziona file",
+    },
+    analytics: {
+      title: "Dashboard Analitiche",
+      totalViews: "Visualizzazioni totali",
+      uniqueItems: "Elementi unici visualizzati",
+      totalSearches: "Ricerche totali",
+      viewsOverTime: "Visualizzazioni nel tempo",
+      topItems: "Elementi più visti",
+      topSearches: "Termini più cercati",
+      today: "Oggi",
+      thisWeek: "Questa settimana",
+      thisMonth: "Questo mese",
+      allTime: "Tutto",
+      noData: "Nessun dato analitico disponibile.",
     },
     admin: {
       accessEyebrow: "Accesso Amministratore",

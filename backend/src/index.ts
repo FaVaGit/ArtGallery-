@@ -4,6 +4,8 @@ import express from "express";
 
 import { authRouter } from "./routes/authRoutes.js";
 import { driveRouter } from "./routes/driveRoutes.js";
+import { socialRouter } from "./routes/socialRoutes.js";
+import { analyticsRouter } from "./routes/analyticsRoutes.js";
 import { HttpError } from "./utils/httpError.js";
 
 dotenv.config();
@@ -21,6 +23,8 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/auth", authRouter);
 app.use("/api/drive", driveRouter);
+app.use("/api/social", socialRouter);
+app.use("/api/analytics", analyticsRouter);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   if (error instanceof HttpError) {

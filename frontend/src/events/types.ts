@@ -50,6 +50,25 @@ export interface EventMap {
   "canvas:viewMode": { mode: "grid" | "canvas" };
   "canvas:zoom": { level: number };
 
+  /* ── Theme ───────────────────────────────────── */
+  "theme:changed": { theme: "light" | "dark" | "system" };
+
+  /* ── Social (comments & ratings) ─────────── */
+  "social:commentAdded": { itemId: string };
+  "social:rated": { itemId: string; score: number };
+
+  /* ── Sharing ───────────────────────────────── */
+  "share:item": { item: DriveItem };
+
+  /* ── Drive upload ──────────────────────────── */
+  "drive:uploadStart": { fileName: string };
+  "drive:uploadProgress": { fileName: string; percent: number };
+  "drive:uploadComplete": { fileName: string };
+  "drive:uploadFailed": { fileName: string; error: string };
+
+  /* ── Gallery filtering ─────────────────────── */
+  "gallery:filter": { type: string; sortBy: string; sortOrder: string };
+
   /* ── Notifications (UI toasts) ─────────────── */
   "notify:info": { message: string };
   "notify:error": { message: string };
