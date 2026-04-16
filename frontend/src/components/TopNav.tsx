@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 
 import { eventBus } from "../events";
@@ -67,53 +68,94 @@ function themeLabel(mode: ThemeMode, labels: TopNavProps["labels"]): string {
 }
 
 export function TopNav({ brandName, user, language, themeMode, labels }: TopNavProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navControls = (
+    <>
+      <button
+        type="button"
+        className="theme-toggle"
+        onClick={() => eventBus.emit("theme:changed", { theme: nextTheme(themeMode) })}
+        title={`${labels.theme}: ${themeLabel(themeMode, labels)}`}
+        aria-label={`${labels.theme}: ${themeLabel(themeMode, labels)}`}
+      >
+        {themeIcon(themeMode)}
+      </button>
+
+      <label className="language-box">
+        <span>{labels.language}</span>
+        <select
+          value={language}
+          onChange={(e) => eventBus.emit("i18n:changed", { language: e.target.value as Language })}
+        >
+          <option value="en">EN</option>
+          <option value="it">IT</option>
+        </select>
+      </label>
+      {user ? (
+        <>
+          <span className="session-chip">{user.username} ({user.role})</span>
+          <button type="button" className="ghost" onClick={() => { eventBus.emit("auth:logout"); setMobileOpen(false); }}>
+            {labels.logout}
+          </button>
+        </>
+      ) : (
+        <span className="session-chip">{labels.guest}</span>
+      )}
+    </>
+  );
+
   return (
     <header className="top-nav">
       <Link to="/" className="brand">
         {brandName}
       </Link>
 
-      <nav>
-        <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "") }>
+      <nav aria-label="Main navigation">
+        <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")} aria-current={undefined}>
           {labels.portfolio}
         </NavLink>
-        <NavLink to="/admin" className={({ isActive }) => (isActive ? "active" : "") }>
+        <NavLink to="/admin" className={({ isActive }) => (isActive ? "active" : "")} aria-current={undefined}>
           {labels.admin}
         </NavLink>
       </nav>
 
-      <div className="session-box">
-        <button
-          type="button"
-          className="theme-toggle"
-          onClick={() => eventBus.emit("theme:changed", { theme: nextTheme(themeMode) })}
-          title={`${labels.theme}: ${themeLabel(themeMode, labels)}`}
-          aria-label={`${labels.theme}: ${themeLabel(themeMode, labels)}`}
-        >
-          {themeIcon(themeMode)}
-        </button>
-
-        <label className="language-box">
-          <span>{labels.language}</span>
-          <select
-            value={language}
-            onChange={(e) => eventBus.emit("i18n:changed", { language: e.target.value as Language })}
-          >
-            <option value="en">EN</option>
-            <option value="it">IT</option>
-          </select>
-        </label>
-        {user ? (
-          <>
-            <span className="session-chip">{user.username} ({user.role})</span>
-            <button type="button" className="ghost" onClick={() => eventBus.emit("auth:logout")}>
-              {labels.logout}
-            </button>
-          </>
-        ) : (
-          <span className="session-chip">{labels.guest}</span>
-        )}
+      {/* Desktop session controls */}
+      <div className="session-box session-box--desktop">
+        {navControls}
       </div>
+
+      {/* Mobile hamburger */}
+      <button
+        type="button"
+        className="hamburger-btn"
+        onClick={() => setMobileOpen(!mobileOpen)}
+        aria-label={mobileOpen ? "Close menu" : "Open menu"}
+        aria-expanded={mobileOpen}
+      >
+        <span className={`hamburger-icon ${mobileOpen ? "open" : ""}`}>
+          <span />
+          <span />
+          <span />
+        </span>
+      </button>
+
+      {/* Mobile dropdown panel */}
+      {mobileOpen && (
+        <div className="mobile-panel" onClick={() => setMobileOpen(false)}>
+          <nav className="mobile-nav" aria-label="Mobile navigation">
+            <NavLink to="/" end onClick={() => setMobileOpen(false)}>
+              {labels.portfolio}
+            </NavLink>
+            <NavLink to="/admin" onClick={() => setMobileOpen(false)}>
+              {labels.admin}
+            </NavLink>
+          </nav>
+          <div className="mobile-controls">
+            {navControls}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

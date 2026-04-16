@@ -7,6 +7,22 @@ export interface Comment {
   created_at: string;
 }
 
+function relativeTime(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  if (Number.isNaN(then)) return dateStr;
+
+  const seconds = Math.floor((now - then) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
+
 interface CommentSectionProps {
   comments: Comment[];
   onPost: (text: string) => void;
@@ -48,7 +64,7 @@ export function CommentSection({ comments, onPost, onDelete, canComment, current
             <div key={c.id} className="comment-item">
               <div className="comment-item-body">
                 <div className="comment-item-meta">
-                  <strong>{c.username}</strong> · {new Date(c.created_at).toLocaleDateString()}
+                  <strong>{c.username}</strong> · <time dateTime={c.created_at} title={new Date(c.created_at).toLocaleString()}>{relativeTime(c.created_at)}</time>
                 </div>
                 <p className="comment-item-text">{c.text}</p>
               </div>

@@ -156,8 +156,15 @@ export function AdminPage({ token, user, messages, config }: AdminPageProps) {
         </span>
       </header>
 
-      {feedback ? <p className="success-banner">{feedback}</p> : null}
-      {error ? <p className="error-banner">{error}</p> : null}
+      {feedback ? <p className="success-banner" role="status" aria-live="polite">{feedback}</p> : null}
+      {error ? (
+        <div className="error-banner" role="alert" aria-live="assertive">
+          <span>{error}</span>
+          <button type="button" className="ghost retry-btn" onClick={() => loadData()}>
+            {messages.common.refresh}
+          </button>
+        </div>
+      ) : null}
 
       {/* ── 1. Configuration (collapsible) ── */}
       <details className="collapsible-section">

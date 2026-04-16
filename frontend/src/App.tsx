@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import { eventBus, useEvent } from "./events";
 import { setApiBaseUrl } from "./api/client";
@@ -7,9 +7,11 @@ import { getCurrentUser, login } from "./api/authApi";
 import { loadAppConfig, saveAppConfig, type AppConfig } from "./config/appConfig";
 import { TopNav } from "./components/TopNav";
 import { Toaster } from "./components/Toaster";
+import { ScrollToTop } from "./components/ScrollToTop";
 import { getMessages, type Language, type ThemeMode } from "./i18n/messages";
 import { AdminPage } from "./pages/AdminPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import type { AuthUser } from "./types";
 import "./App.css";
 
@@ -136,6 +138,7 @@ function App() {
 
   return (
     <div className="app-shell">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <TopNav
         brandName={config.brandName}
         user={user}
@@ -144,9 +147,9 @@ function App() {
         labels={messages.nav}
       />
 
-      {isOffline && <div className="offline-banner">{messages.common.offline}</div>}
+      {isOffline && <div className="offline-banner" role="alert">{messages.common.offline}</div>}
 
-      <main>
+      <main id="main-content">
         <Routes>
           <Route path="/" element={<PortfolioPage messages={messages} config={config} token={token} />} />
           <Route
@@ -160,7 +163,7 @@ function App() {
               />
             }
           />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
 
@@ -179,6 +182,7 @@ function App() {
       </footer>
 
       <Toaster />
+      <ScrollToTop />
     </div>
   );
 }
