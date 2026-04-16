@@ -138,62 +138,91 @@ export function AdminPage({ token, user, messages, config }: AdminPageProps) {
         </span>
       </header>
 
-      {/* Runtime configuration section */}
-      <section className="admin-actions config-panel">
-        <h2>{messages.admin.configTitle}</h2>
-        <div className="inline-fields">
-          <input
-            value={configDraft.brandName}
-            onChange={(e) => setConfigDraft((prev) => ({ ...prev, brandName: e.target.value }))}
-            placeholder={messages.admin.brandName}
-          />
-          <input
-            value={configDraft.apiBaseUrl}
-            onChange={(e) => setConfigDraft((prev) => ({ ...prev, apiBaseUrl: e.target.value }))}
-            placeholder={messages.admin.apiBaseUrl}
-          />
-          <input
-            value={configDraft.defaultFolderId}
-            onChange={(e) => setConfigDraft((prev) => ({ ...prev, defaultFolderId: e.target.value }))}
-            placeholder={messages.admin.defaultFolderId}
-          />
-          <select
-            value={configDraft.visibilityMode}
-            onChange={(e) =>
-              setConfigDraft((prev) => ({
-                ...prev,
-                visibilityMode: e.target.value === "private" ? "private" : "public",
-              }))
-            }
-          >
-            <option value="public">{messages.admin.visibilityMode}: {messages.admin.publicMode}</option>
-            <option value="private">{messages.admin.visibilityMode}: {messages.admin.privateMode}</option>
-          </select>
-        </div>
-        <button type="button" onClick={saveConfiguration}>{messages.admin.saveConfig}</button>
-      </section>
+      {feedback ? <p className="success-banner">{feedback}</p> : null}
+      {error ? <p className="error-banner">{error}</p> : null}
 
-      {/* Content browser */}
-      <section className="filters-panel">
-        <div className="inline-fields">
-          <input
-            value={folderId}
-            onChange={(e) => setFolderId(e.target.value)}
-            placeholder={messages.common.folderIdOptional}
-          />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={messages.common.searchByName}
-          />
+      {/* ── 1. Configuration (collapsible) ── */}
+      <details className="collapsible-section">
+        <summary className="collapsible-header">
+          <h2>{messages.admin.configTitle}</h2>
+          <span className="help-text">{messages.admin.configHelp}</span>
+        </summary>
+        <div className="collapsible-body">
+          <div className="labeled-fields">
+            <label className="field-group">
+              <span className="field-label">{messages.admin.brandName}</span>
+              <input
+                value={configDraft.brandName}
+                onChange={(e) => setConfigDraft((prev) => ({ ...prev, brandName: e.target.value }))}
+                placeholder="Facciate Gallery"
+              />
+            </label>
+            <label className="field-group">
+              <span className="field-label">{messages.admin.apiBaseUrl}</span>
+              <input
+                value={configDraft.apiBaseUrl}
+                onChange={(e) => setConfigDraft((prev) => ({ ...prev, apiBaseUrl: e.target.value }))}
+                placeholder={messages.admin.apiBaseUrlHint}
+              />
+            </label>
+            <label className="field-group">
+              <span className="field-label">{messages.admin.defaultFolderId}</span>
+              <input
+                value={configDraft.defaultFolderId}
+                onChange={(e) => setConfigDraft((prev) => ({ ...prev, defaultFolderId: e.target.value }))}
+                placeholder={messages.admin.defaultFolderIdHint}
+              />
+            </label>
+            <label className="field-group">
+              <span className="field-label">{messages.admin.visibilityMode}</span>
+              <select
+                value={configDraft.visibilityMode}
+                onChange={(e) =>
+                  setConfigDraft((prev) => ({
+                    ...prev,
+                    visibilityMode: e.target.value === "private" ? "private" : "public",
+                  }))
+                }
+              >
+                <option value="public">{messages.admin.publicMode}</option>
+                <option value="private">{messages.admin.privateMode}</option>
+              </select>
+            </label>
+          </div>
+          <button type="button" onClick={saveConfiguration}>{messages.admin.saveConfig}</button>
+        </div>
+      </details>
+
+      {/* ── 2. Content browser (collapsible, open by default) ── */}
+      <details className="collapsible-section" open>
+        <summary className="collapsible-header">
+          <h2>{messages.admin.loadItems}</h2>
+          <span className="help-text">{messages.admin.browseHelp}</span>
+        </summary>
+        <div className="collapsible-body">
+          <div className="labeled-fields two-col">
+            <label className="field-group">
+              <span className="field-label">{messages.common.folderIdOptional}</span>
+              <input
+                value={folderId}
+                onChange={(e) => setFolderId(e.target.value)}
+                placeholder="1aBcDeFgHiJkLmN..."
+              />
+            </label>
+            <label className="field-group">
+              <span className="field-label">{messages.common.searchByName}</span>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={messages.common.searchByName}
+              />
+            </label>
+          </div>
           <button type="button" onClick={() => loadData()} disabled={loading}>
             {loading ? messages.common.loading : messages.admin.loadItems}
           </button>
         </div>
-      </section>
-
-      {feedback ? <p className="success-banner">{feedback}</p> : null}
-      {error ? <p className="error-banner">{error}</p> : null}
+      </details>
 
       <GalleryGrid
         items={items}
@@ -207,22 +236,31 @@ export function AdminPage({ token, user, messages, config }: AdminPageProps) {
         onSelectItem={setSelectedItem}
       />
 
+      {/* ── 3. Admin actions (collapsible) ── */}
       {isAdmin ? (
-        <AdminActions
-          labels={messages.actions}
-          selectedItem={selectedItem}
-          onCreateFolder={(name, parentId) =>
-            perform(() => createFolder(token, name, parentId), messages.actions.folderCreated.replace("{name}", name))
-          }
-          onRename={(itemId, name) => perform(() => renameItem(token, itemId, name), messages.actions.itemRenamed)}
-          onMove={(itemId, targetParentId) =>
-            perform(() => moveItem(token, itemId, targetParentId), messages.actions.itemMoved)
-          }
-          onCopy={(itemId, targetParentId, name) =>
-            perform(() => copyItem(token, itemId, targetParentId, name), messages.actions.itemCopied)
-          }
-          onDelete={(itemId) => perform(() => deleteItem(token, itemId), messages.actions.itemDeleted)}
-        />
+        <details className="collapsible-section">
+          <summary className="collapsible-header">
+            <h2>{messages.actions.title}</h2>
+            <span className="help-text">{messages.admin.adminActionsHelp}</span>
+          </summary>
+          <div className="collapsible-body">
+            <AdminActions
+              labels={messages.actions}
+              selectedItem={selectedItem}
+              onCreateFolder={(name, parentId) =>
+                perform(() => createFolder(token, name, parentId), messages.actions.folderCreated.replace("{name}", name))
+              }
+              onRename={(itemId, name) => perform(() => renameItem(token, itemId, name), messages.actions.itemRenamed)}
+              onMove={(itemId, targetParentId) =>
+                perform(() => moveItem(token, itemId, targetParentId), messages.actions.itemMoved)
+              }
+              onCopy={(itemId, targetParentId, name) =>
+                perform(() => copyItem(token, itemId, targetParentId, name), messages.actions.itemCopied)
+              }
+              onDelete={(itemId) => perform(() => deleteItem(token, itemId), messages.actions.itemDeleted)}
+            />
+          </div>
+        </details>
       ) : (
         <p className="error-banner">{messages.admin.viewerReadOnly}</p>
       )}

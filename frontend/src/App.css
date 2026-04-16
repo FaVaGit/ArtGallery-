@@ -441,6 +441,93 @@ button:disabled {
   font-size: 13px;
 }
 
+/* ── Collapsible sections ────────────────────── */
+.collapsible-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-l);
+  box-shadow: var(--shadow-4);
+  overflow: hidden;
+}
+
+.collapsible-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  padding: var(--space-m) var(--space-l);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  transition: background var(--motion-fast);
+}
+
+.collapsible-header::-webkit-details-marker { display: none; }
+
+.collapsible-header::before {
+  content: "▸";
+  font-size: 14px;
+  color: var(--text-tertiary);
+  transition: transform var(--motion-normal);
+  flex-shrink: 0;
+}
+
+.collapsible-section[open] > .collapsible-header::before {
+  transform: rotate(90deg);
+}
+
+.collapsible-header:hover {
+  background: var(--bg-subtle);
+}
+
+.collapsible-header h2 {
+  font-size: 1rem;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.collapsible-header .help-text {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.collapsible-body {
+  padding: 0 var(--space-l) var(--space-l);
+  display: grid;
+  gap: var(--space-m);
+}
+
+/* ── Labeled field groups ────────────────────── */
+.labeled-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-m);
+}
+
+.labeled-fields.two-col {
+  grid-template-columns: 1fr 1fr;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 640px) {
+  .labeled-fields,
+  .labeled-fields.two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Banners ─────────────────────────────────── */
 .error-banner, .success-banner, .empty {
   border-radius: var(--radius-m);

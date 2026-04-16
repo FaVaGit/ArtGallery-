@@ -62,6 +62,11 @@ interface Messages {
     privateMode: string;
     saveConfig: string;
     configSaved: string;
+    configHelp: string;
+    apiBaseUrlHint: string;
+    defaultFolderIdHint: string;
+    browseHelp: string;
+    adminActionsHelp: string;
   };
   actions: {
     title: string;
@@ -154,6 +159,11 @@ const messages: Record<Language, Messages> = {
       privateMode: "Private",
       saveConfig: "Save Configuration",
       configSaved: "Configuration saved.",
+      configHelp: "Set the backend API address and display preferences. Expand to edit.",
+      apiBaseUrlHint: "e.g. https://artgallery-backend.onrender.com/api",
+      defaultFolderIdHint: "Google Drive folder ID to load by default",
+      browseHelp: "Enter a folder ID or search term, then click Load to browse Drive content.",
+      adminActionsHelp: "Select an item from the gallery grid above, then use these controls.",
     },
     actions: {
       title: "Admin Controls",
@@ -242,6 +252,11 @@ const messages: Record<Language, Messages> = {
       privateMode: "Privato",
       saveConfig: "Salva Configurazione",
       configSaved: "Configurazione salvata.",
+      configHelp: "Imposta l'indirizzo API del backend e le preferenze di visualizzazione. Espandi per modificare.",
+      apiBaseUrlHint: "es. https://artgallery-backend.onrender.com/api",
+      defaultFolderIdHint: "ID cartella Google Drive da caricare per impostazione predefinita",
+      browseHelp: "Inserisci un ID cartella o un termine di ricerca, poi premi Carica per esplorare il Drive.",
+      adminActionsHelp: "Seleziona un elemento dalla griglia sopra, poi usa questi controlli.",
     },
     actions: {
       title: "Controlli Admin",
