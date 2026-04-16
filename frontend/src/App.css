@@ -327,6 +327,8 @@ main {
   z-index: 2;
   pointer-events: none;
   opacity: 0;
+  display: grid;
+  place-items: center;
   background: linear-gradient(
     105deg,
     transparent 30%,
@@ -338,6 +340,26 @@ main {
   background-size: 250% 100%;
   animation: shimmerWave 1.8s ease-in-out infinite;
   transition: opacity 300ms ease;
+}
+
+.thumb-hover-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(4px);
+  color: var(--accent-gold, #c5a55a);
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 300ms ease, transform 300ms cubic-bezier(0.4,0,0.2,1);
+  filter: drop-shadow(0 2px 8px rgba(44,36,24,0.15));
+}
+
+.gallery-card:hover .thumb-hover-icon {
+  opacity: 0.85;
+  transform: scale(1);
 }
 
 @keyframes shimmerWave {
@@ -457,6 +479,8 @@ main {
 /* ── Canvas hover overlay ────────────────────── */
 .canvas-hover-overlay {
   position: absolute;
+  display: grid;
+  place-items: center;
   pointer-events: auto;
   z-index: 10;
   border-radius: var(--radius-m) var(--radius-m) 0 0;
@@ -474,6 +498,19 @@ main {
   cursor: pointer;
   border: 2px solid rgba(197,165,90,0.4);
   box-shadow: 0 0 16px rgba(197,165,90,0.15);
+}
+
+.canvas-overlay-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(4px);
+  color: var(--accent-gold, #c5a55a);
+  opacity: 0.85;
+  filter: drop-shadow(0 2px 8px rgba(44,36,24,0.15));
 }
 
 @keyframes hoverFadeIn {

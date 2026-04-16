@@ -52,6 +52,11 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
 
     const cols = Math.max(1, Math.floor((fc.width! - GAP) / (CARD_W + GAP)));
 
+    /* Fabric v7: object left/top positions the CENTER of the object (default origin).
+       Helper converts top-left coords → center coords for a given size. */
+    const cx = (left: number, w: number) => left + w / 2;
+    const cy = (top: number, h: number) => top + h / 2;
+
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       const col = i % cols;
@@ -61,10 +66,10 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
       const isFolder = item.itemType === "folder";
       const isSelected = item.id === selectedId;
 
-      /* Card background */
+      /* Card background — center at (CARD_W/2, CARD_H/2) */
       const bg = new Rect({
-        left: 0,
-        top: 0,
+        left: cx(0, CARD_W),
+        top: cy(0, CARD_H),
         width: CARD_W,
         height: CARD_H,
         rx: CORNER_R,
@@ -92,37 +97,41 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
             const scX = halfW / (img.width || halfW);
             const scY = halfH / (img.height || halfH);
             const sc = Math.max(scX, scY);
-            img.set({ left: px, top: py, scaleX: sc, scaleY: sc, clipPath: new Rect({ width: halfW / sc, height: halfH / sc }) });
+            const visW = (img.width || halfW) * sc;
+            const visH = (img.height || halfH) * sc;
+            img.set({ left: cx(px, visW), top: cy(py, visH), scaleX: sc, scaleY: sc, clipPath: new Rect({ width: halfW / sc, height: halfH / sc }) });
             thumbObjects.push(img);
           } catch {
-            thumbObjects.push(new Rect({ width: halfW, height: halfH, left: px, top: py, fill: "#e8ddd0" }));
+            thumbObjects.push(new Rect({ width: halfW, height: halfH, left: cx(px, halfW), top: cy(py, halfH), fill: "#e8ddd0" }));
           }
         }
       } else {
         const thumbUrl = item.thumbnailLink
           ? `${getApiBaseUrl()}/drive/thumbnail/${encodeURIComponent(item.id)}?size=220`
           : null;
+        const tw = CARD_W - 2;
+        const th = THUMB_H;
 
         if (thumbUrl) {
           try {
             const img = await FabricImage.fromURL(thumbUrl, { crossOrigin: "anonymous" });
-            const tw = CARD_W - 2;
-            const th = THUMB_H;
             const scX = tw / (img.width || tw);
             const scY = th / (img.height || th);
             const sc = Math.max(scX, scY);
-            img.set({ left: 1, top: 1, scaleX: sc, scaleY: sc, clipPath: new Rect({ width: tw / sc, height: th / sc, rx: CORNER_R / sc, ry: CORNER_R / sc }) });
+            const visW = (img.width || tw) * sc;
+            const visH = (img.height || th) * sc;
+            img.set({ left: cx(1, visW), top: cy(1, visH), scaleX: sc, scaleY: sc, clipPath: new Rect({ width: tw / sc, height: th / sc, rx: CORNER_R / sc, ry: CORNER_R / sc }) });
             thumbObjects.push(img);
           } catch {
             thumbObjects.push(new Rect({
-              width: CARD_W - 2, height: THUMB_H, rx: CORNER_R, ry: CORNER_R,
-              left: 1, top: 1, fill: isFolder ? "#d4e7f7" : "#e8dcc6",
+              width: tw, height: th, rx: CORNER_R, ry: CORNER_R,
+              left: cx(1, tw), top: cy(1, th), fill: isFolder ? "#d4e7f7" : "#e8dcc6",
             }));
           }
         } else {
           thumbObjects.push(new Rect({
-            width: CARD_W - 2, height: THUMB_H, rx: CORNER_R, ry: CORNER_R,
-            left: 1, top: 1, fill: isFolder ? "#d4e7f7" : "#e8dcc6",
+            width: tw, height: th, rx: CORNER_R, ry: CORNER_R,
+            left: cx(1, tw), top: cy(1, th), fill: isFolder ? "#d4e7f7" : "#e8dcc6",
           }));
         }
       }
@@ -132,8 +141,8 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
       if (!hasRealThumb) {
         thumbObjects.push(new FabricText(isFolder ? "\uD83D\uDCC1" : "\uD83D\uDDBC", {
           fontSize: 36,
-          left: CARD_W / 2 - 18,
-          top: THUMB_H / 2 - 18,
+          left: CARD_W / 2,
+          top: THUMB_H / 2,
           selectable: false,
         }));
       }
@@ -145,8 +154,7 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
         fontWeight: "600",
         fill: "#2c2418",
         left: 12,
-        top: THUMB_H + 12,
-        width: CARD_W - 24,
+        top: THUMB_H + 16,
       });
 
       /* Type label */
@@ -155,7 +163,7 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
         fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
         fill: "#6b5e4f",
         left: 12,
-        top: THUMB_H + 32,
+        top: THUMB_H + 36,
       });
 
       const group = new Group([bg, ...thumbObjects, nameText, typeText], {
@@ -311,7 +319,22 @@ export function FabricCanvas({ items, selectedId, labels, folderPreviews }: Fabr
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleAction(hoveredItem); } }}
           title={hoveredItem.itemType === "folder" ? labels.open : "View"}
-        />
+        >
+          <span className="canvas-overlay-icon">
+            {hoveredItem.itemType === "folder" ? (
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                <polyline points="12 11 12 17" />
+                <polyline points="9 14 12 11 15 14" />
+              </svg>
+            ) : (
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </span>
+        </div>
       )}
     </div>
   );
