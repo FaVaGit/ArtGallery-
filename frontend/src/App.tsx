@@ -47,12 +47,14 @@ function App() {
     localStorage.setItem(THEME_KEY, themeMode);
     document.documentElement.setAttribute("data-theme", resolveTheme(themeMode));
 
-    if (themeMode === "system") {
-      const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      const onChange = () => document.documentElement.setAttribute("data-theme", mq.matches ? "dark" : "light");
-      mq.addEventListener("change", onChange);
-      return () => mq.removeEventListener("change", onChange);
-    }
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => {
+      if (themeMode === "system") {
+        document.documentElement.setAttribute("data-theme", mq.matches ? "dark" : "light");
+      }
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
   }, [themeMode]);
 
   /* ── Offline detection ─────────────────────── */

@@ -32,6 +32,14 @@ function rateLimit(req: Request, _res: Response, next: NextFunction): void {
   next();
 }
 
+// Cleanup expired rate limit entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitMap) {
+    if (now > entry.reset) rateLimitMap.delete(key);
+  }
+}, 5 * 60_000);
+
 /* ── Schemas ─────────────────────────────────── */
 const trackEventSchema = z.object({
   eventType: z.string().min(1).max(50),

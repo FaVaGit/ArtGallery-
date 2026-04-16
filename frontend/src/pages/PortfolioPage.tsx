@@ -124,17 +124,17 @@ export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
   useEffect(() => {
     const hash = window.location.hash;
     const match = hash.match(/[?&]item=([^&]+)/);
-    if (match) {
-      const itemId = decodeURIComponent(match[1]);
-      // Wait for items to load, then open lightbox
-      const checkItems = () => {
-        const found = rawItems.find((i) => i.id === itemId);
-        if (found && found.itemType === "file") {
-          setLightboxItem(found);
-        }
-      };
-      if (rawItems.length > 0) checkItems();
-      else setTimeout(checkItems, 2000);
+    if (!match || rawItems.length === 0) return;
+
+    const itemId = decodeURIComponent(match[1]);
+    const found = rawItems.find((i) => i.id === itemId);
+    if (found && found.itemType === "file") {
+      setLightboxItem(found);
+      // Clear the item param from the URL to avoid re-opening on navigation
+      const cleanHash = hash.replace(/[?&]item=[^&]+/, "").replace(/\?$/, "");
+      if (cleanHash !== hash) {
+        window.location.hash = cleanHash || "#/";
+      }
     }
   }, [rawItems]);
 

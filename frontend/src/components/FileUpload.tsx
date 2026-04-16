@@ -20,8 +20,13 @@ const MAX_SIZE = 25 * 1024 * 1024; // 25MB
 
 interface UploadItem {
   file: File;
+  key: string;
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
+}
+
+function fileKey(file: File): string {
+  return `${file.name}-${file.size}-${file.lastModified}`;
 }
 
 export function FileUpload({ onUpload, labels }: FileUploadProps) {
@@ -38,7 +43,7 @@ export function FileUpload({ onUpload, labels }: FileUploadProps) {
   function addFiles(files: FileList | File[]) {
     const newItems: UploadItem[] = Array.from(files).map((file) => {
       const err = validate(file);
-      return { file, status: err ? "error" as const : "pending" as const, error: err ?? undefined };
+      return { file, key: fileKey(file), status: err ? "error" as const : "pending" as const, error: err ?? undefined };
     });
     setItems((prev) => [...prev, ...newItems]);
 
@@ -51,13 +56,14 @@ export function FileUpload({ onUpload, labels }: FileUploadProps) {
   }
 
   async function uploadOne(item: UploadItem) {
-    setItems((prev) => prev.map((i) => i.file === item.file ? { ...i, status: "uploading" } : i));
+    const key = item.key;
+    setItems((prev) => prev.map((i) => i.key === key ? { ...i, status: "uploading" } : i));
     try {
       await onUpload(item.file);
-      setItems((prev) => prev.map((i) => i.file === item.file ? { ...i, status: "done" } : i));
+      setItems((prev) => prev.map((i) => i.key === key ? { ...i, status: "done" } : i));
     } catch (err) {
       const msg = err instanceof Error ? err.message : labels.uploadFailed;
-      setItems((prev) => prev.map((i) => i.file === item.file ? { ...i, status: "error", error: msg } : i));
+      setItems((prev) => prev.map((i) => i.key === key ? { ...i, status: "error", error: msg } : i));
     }
   }
 
@@ -86,8 +92,8 @@ export function FileUpload({ onUpload, labels }: FileUploadProps) {
 
       {items.length > 0 && (
         <div className="upload-file-list">
-          {items.map((item, i) => (
-            <div key={i} className="upload-file-item">
+          {items.map((item) => (
+            <div key={item.key} className="upload-file-item">
               <span style={{ flex: 1, fontSize: 13 }}>{item.file.name}</span>
               {item.status === "uploading" && (
                 <div className="upload-progress" style={{ flex: 1 }}>
