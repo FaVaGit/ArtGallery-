@@ -344,5 +344,24 @@ export async function uploadFile(input: {
     supportsAllDrives: true,
   });
 
+  // Transfer ownership to the Drive folder owner so the file counts against
+  // their quota instead of the service account's (which has zero storage).
+  const ownerEmail = process.env.GOOGLE_DRIVE_OWNER_EMAIL;
+  if (ownerEmail && response.data.id) {
+    try {
+      await drive.permissions.create({
+        fileId: response.data.id,
+        transferOwnership: true,
+        requestBody: {
+          role: "owner",
+          type: "user",
+          emailAddress: ownerEmail,
+        },
+      });
+    } catch {
+      // Non-fatal: file was uploaded successfully, ownership transfer is best-effort
+    }
+  }
+
   return mapDriveItem(response.data);
 }
