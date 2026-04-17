@@ -6,6 +6,7 @@ import { trackEvent } from "../api/analyticsApi";
 import { ShareButton } from "./ShareButton";
 import { StarRating } from "./StarRating";
 import { CommentSection } from "./CommentSection";
+import { LocationMap } from "./LocationMap";
 import type { AppMessages } from "../i18n/messages";
 
 interface LightboxProps {
@@ -195,6 +196,14 @@ export function Lightbox({ item, onClose, messages, token, username, isAdmin, it
           onLoad={() => setImgLoaded(true)}
         />
         <p className="lightbox-caption">{item.name}</p>
+
+        {item.location && (
+          <LocationMap
+            latitude={item.location.latitude}
+            longitude={item.location.longitude}
+            title={item.description ?? undefined}
+          />
+        )}
 
         <div className="lightbox-social">
           <StarRating

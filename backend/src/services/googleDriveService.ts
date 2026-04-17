@@ -4,6 +4,7 @@ import { HttpError } from "../utils/httpError.js";
 
 const DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive"];
 const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
+const ITEM_FIELDS = "id,name,mimeType,webViewLink,thumbnailLink,createdTime,modifiedTime,parents,description,imageMediaMetadata(location)";
 
 type ItemType = "folder" | "file";
 
@@ -17,6 +18,8 @@ export interface DriveItem {
   modifiedTime: string | null;
   parents: string[];
   itemType: ItemType;
+  description: string | null;
+  location: { latitude: number; longitude: number } | null;
 }
 
 export interface DriveListResult {
@@ -74,7 +77,12 @@ function mapDriveItem(item: {
   createdTime?: string | null;
   modifiedTime?: string | null;
   parents?: string[] | null;
+  description?: string | null;
+  imageMediaMetadata?: {
+    location?: { latitude?: number; longitude?: number } | null;
+  } | null;
 }): DriveItem {
+  const loc = item.imageMediaMetadata?.location;
   return {
     id: item.id ?? "",
     name: item.name ?? "",
@@ -85,6 +93,10 @@ function mapDriveItem(item: {
     modifiedTime: item.modifiedTime ?? null,
     parents: item.parents ?? [],
     itemType: item.mimeType === FOLDER_MIME_TYPE ? "folder" : "file",
+    description: item.description ?? null,
+    location: loc?.latitude != null && loc?.longitude != null
+      ? { latitude: loc.latitude, longitude: loc.longitude }
+      : null,
   };
 }
 
@@ -112,7 +124,7 @@ export async function listFolders(parentId: string): Promise<DriveItem[]> {
   const response = await drive.files.list({
     q: `'${parentId}' in parents and mimeType='${FOLDER_MIME_TYPE}' and trashed=false`,
     fields:
-      "files(id,name,mimeType,webViewLink,thumbnailLink,createdTime,modifiedTime,parents)",
+      `files(${ITEM_FIELDS})`,
     orderBy: "name",
     pageSize: 200,
     includeItemsFromAllDrives: true,
@@ -127,6 +139,7 @@ export async function listItems(options: {
   pageSize?: number;
   pageToken?: string;
   search?: string;
+  searchMode?: "name" | "fullText";
 }): Promise<DriveListResult> {
   const drive = getDriveClient();
 
@@ -134,13 +147,17 @@ export async function listItems(options: {
 
   if (options.search) {
     const escaped = options.search.replace(/'/g, "\\'");
-    conditions.push(`name contains '${escaped}'`);
+    if (options.searchMode === "fullText") {
+      conditions.push(`fullText contains '${escaped}'`);
+    } else {
+      conditions.push(`name contains '${escaped}'`);
+    }
   }
 
   const response = await drive.files.list({
     q: conditions.join(" and "),
     fields:
-      "nextPageToken,files(id,name,mimeType,webViewLink,thumbnailLink,createdTime,modifiedTime,parents)",
+      `nextPageToken,files(${ITEM_FIELDS})`,
     orderBy: "folder,name",
     pageSize: options.pageSize ?? 100,
     pageToken: options.pageToken,
@@ -166,7 +183,7 @@ export async function createFolder(input: {
       mimeType: FOLDER_MIME_TYPE,
       parents: [input.parentId],
     },
-    fields: "id,name,mimeType,webViewLink,thumbnailLink,createdTime,modifiedTime,parents",
+    fields: ITEM_FIELDS,
     supportsAllDrives: true,
   });
 
@@ -182,7 +199,7 @@ export async function renameItem(input: {
   const response = await drive.files.update({
     fileId: input.itemId,
     requestBody: { name: input.name },
-    fields: "id,name,mimeType,webViewLink,thumbnailLink,createdTime,modifiedTime,parents",
+    fields: ITEM_FIELDS,
     supportsAllDrives: true,
   });
 
@@ -207,7 +224,7 @@ export async function moveItem(input: {
     fileId: input.itemId,
     addParents: input.targetParentId,
     removeParents: previousParents,
-    fields: "id,name,mimeType,webViewLink,thumbnailLink,createdTime,modifiedTime,parents",
+    fields: ITEM_FIELDS,
     supportsAllDrives: true,
   });
 
@@ -227,7 +244,7 @@ export async function copyItem(input: {
       name: input.name,
       parents: [input.targetParentId],
     },
-    fields: "id,name,mimeType,webViewLink,thumbnailLink,createdTime,modifiedTime,parents",
+    fields: ITEM_FIELDS,
     supportsAllDrives: true,
   });
 
@@ -241,6 +258,34 @@ export async function deleteItem(itemId: string): Promise<void> {
     fileId: itemId,
     supportsAllDrives: true,
   });
+}
+
+export async function getFileContent(fileId: string): Promise<string> {
+  const drive = getDriveClient();
+
+  const response = await drive.files.get(
+    { fileId, alt: "media", supportsAllDrives: true },
+    { responseType: "text" },
+  );
+
+  return String(response.data);
+}
+
+export async function getFolderReadme(folderId: string): Promise<string | null> {
+  const drive = getDriveClient();
+
+  const response = await drive.files.list({
+    q: `'${folderId}' in parents and name='README.md' and trashed=false`,
+    fields: "files(id)",
+    pageSize: 1,
+    includeItemsFromAllDrives: true,
+    supportsAllDrives: true,
+  });
+
+  const readmeFile = response.data.files?.[0];
+  if (!readmeFile?.id) return null;
+
+  return getFileContent(readmeFile.id);
 }
 
 export async function getThumbnail(
@@ -294,7 +339,7 @@ export async function uploadFile(input: {
       mimeType: input.mimeType,
       body: stream,
     },
-    fields: "id,name,mimeType,webViewLink,thumbnailLink,createdTime,modifiedTime,parents",
+    fields: ITEM_FIELDS,
     supportsAllDrives: true,
   });
 

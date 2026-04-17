@@ -99,4 +99,17 @@ describe("GalleryGrid", () => {
     renderGrid({ items });
     expect(screen.getAllByRole("button")).toHaveLength(3);
   });
+
+  it("shows LocationBadge for items with location", () => {
+    const items = [makeDriveItem({ id: "f1", name: "Geotagged", location: { latitude: 44.4, longitude: 8.9 } })];
+    renderGrid({ items });
+    const link = screen.getByRole("link");
+    expect(link).toHaveAttribute("href", "https://www.google.com/maps?q=44.4,8.9");
+  });
+
+  it("does not show LocationBadge for items without location", () => {
+    const items = [makeDriveItem({ id: "f1", name: "NoGeo" })];
+    renderGrid({ items });
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  });
 });

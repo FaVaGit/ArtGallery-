@@ -57,4 +57,13 @@ describe("i18n messages", () => {
     expect(en.portfolio.cancel).toBe("Cancel");
     expect(it.portfolio.cancel).toBe("Annulla");
   });
+
+  it("includes search mode keys (Phase 3)", () => {
+    const en = getMessages("en");
+    const it = getMessages("it");
+    expect(en.portfolio.searchFullText).toBeTruthy();
+    expect(en.portfolio.searchByName).toBeTruthy();
+    expect(it.portfolio.searchFullText).toBeTruthy();
+    expect(it.portfolio.searchByName).toBeTruthy();
+  });
 });

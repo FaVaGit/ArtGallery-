@@ -7,6 +7,7 @@ import {
   copyItem,
   createFolder,
   deleteItem,
+  getFolderReadme,
   getThumbnail,
   listFolders,
   listItems,
@@ -32,6 +33,7 @@ const listItemsQuerySchema = z.object({
     .transform((value) => (value ? Number(value) : undefined)),
   pageToken: z.string().optional(),
   search: z.string().optional(),
+  searchMode: z.enum(["name", "fullText"]).optional(),
 });
 
 const listFoldersQuerySchema = z.object({
@@ -124,9 +126,20 @@ router.get("/items", async (req, res, next) => {
       pageSize,
       pageToken: parsed.data.pageToken,
       search: parsed.data.search,
+      searchMode: parsed.data.searchMode,
     });
 
     res.json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/folders/:folderId/readme", async (req, res, next) => {
+  try {
+    const folderId = getItemIdParam(req.params.folderId);
+    const content = await getFolderReadme(folderId);
+    res.json({ content });
   } catch (error) {
     next(error);
   }

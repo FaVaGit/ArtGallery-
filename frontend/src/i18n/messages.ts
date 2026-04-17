@@ -52,6 +52,8 @@ interface Messages {
     folderCreated: string;
     folderCreateError: string;
     cancel: string;
+    searchFullText: string;
+    searchByName: string;
   };
   filter: {
     typeAll: string;
@@ -221,6 +223,8 @@ const messages: Record<Language, Messages> = {
       folderCreated: "Folder created successfully",
       folderCreateError: "Failed to create folder",
       cancel: "Cancel",
+      searchFullText: "Search content & metadata…",
+      searchByName: "Search by name",
     },
     filter: {
       typeAll: "All",
@@ -386,6 +390,8 @@ const messages: Record<Language, Messages> = {
       folderCreated: "Cartella creata con successo",
       folderCreateError: "Errore nella creazione della cartella",
       cancel: "Annulla",
+      searchFullText: "Cerca contenuto e metadati…",
+      searchByName: "Cerca per nome",
     },
     filter: {
       typeAll: "Tutti",

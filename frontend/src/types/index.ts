@@ -21,6 +21,8 @@ export interface DriveItem {
   modifiedTime: string | null;
   parents: string[];
   itemType: "folder" | "file";
+  description: string | null;
+  location: { latitude: number; longitude: number } | null;
 }
 
 export interface DriveItemsResponse {

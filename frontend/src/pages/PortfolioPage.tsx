@@ -4,12 +4,15 @@ import { ApiError } from "../api/client";
 import type { AppConfig } from "../config/appConfig";
 import type { AppMessages } from "../i18n/messages";
 import { getDriveStatus, listItems, createFolder } from "../api/driveApi";
+import { uploadFile } from "../api/socialApi";
 import { trackEvent } from "../api/analyticsApi";
 import { GalleryGrid } from "../components/GalleryGrid";
 import { Lightbox } from "../components/Lightbox";
 import { FilterBar, type FilterState } from "../components/FilterBar";
 import { SkeletonGrid } from "../components/SkeletonCard";
 import { CreateFolderDialog } from "../components/CreateFolderDialog";
+import { UploadDialog } from "../components/UploadDialog";
+import { FolderDescription } from "../components/FolderDescription";
 import { eventBus, useEvent } from "../events";
 import type { DriveItem, AuthUser } from "../types";
 
@@ -67,12 +70,14 @@ export function PortfolioPage({ config, messages, token, user }: PortfolioPagePr
 
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
   const [createFolderLoading, setCreateFolderLoading] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [searchMode, setSearchMode] = useState<"name" | "fullText">("name");
 
   const isAdmin = user?.role === "admin";
 
   const items = applyClientFilters(rawItems, filters);
 
-  const loadData = useCallback(async (nextFolderId?: string, nextSearch?: string) => {
+  const loadData = useCallback(async (nextFolderId?: string, nextSearch?: string, nextSearchMode?: "name" | "fullText") => {
     setLoading(true);
     setError(null);
     setFolderPreviews({});
@@ -82,6 +87,7 @@ export function PortfolioPage({ config, messages, token, user }: PortfolioPagePr
       const response = await listItems({
         folderId: nextFolderId || config.defaultFolderId || undefined,
         search: nextSearch || undefined,
+        searchMode: nextSearch ? (nextSearchMode ?? searchMode) : undefined,
         pageSize: 200,
       });
 
@@ -112,20 +118,20 @@ export function PortfolioPage({ config, messages, token, user }: PortfolioPagePr
     } finally {
       setLoading(false);
     }
-  }, [config.defaultFolderId, messages.portfolio.unableToLoad]);
+  }, [config.defaultFolderId, messages.portfolio.unableToLoad, searchMode]);
 
   /* ── Debounced search ──────────────────────── */
   function handleSearchChange(value: string) {
     setSearch(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      loadData(folderId, value).catch(() => undefined);
+      loadData(folderId, value, searchMode).catch(() => undefined);
     }, 300);
   }
 
   function clearSearch() {
     setSearch("");
-    loadData(folderId, "").catch(() => undefined);
+    loadData(folderId, "", searchMode).catch(() => undefined);
   }
 
   /* ── Create folder (admin) ─────────────────── */
@@ -143,6 +149,15 @@ export function PortfolioPage({ config, messages, token, user }: PortfolioPagePr
     } finally {
       setCreateFolderLoading(false);
     }
+  }
+
+  /* ── Upload file (admin) ────────────────── */
+  async function handleUploadFile(file: File) {
+    if (!token) return;
+    const parentId = folderId || config.defaultFolderId || undefined;
+    await uploadFile(token, file, parentId);
+    eventBus.emit("notify:success", { message: messages.upload.uploadComplete });
+    await loadData(folderId, search);
   }
 
   /* ── Bootstrap: check drive status + load data ── */
@@ -278,21 +293,42 @@ export function PortfolioPage({ config, messages, token, user }: PortfolioPagePr
               </svg>
             </button>
           )}
+          {isAdmin && (
+            <button type="button" className="toolbar-icon-btn" onClick={() => setUploadOpen(true)} title={messages.upload.title}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </button>
+          )}
           {searchOpen ? (
             <div className="toolbar-search">
+              <button
+                type="button"
+                className={`search-mode-toggle ${searchMode === "fullText" ? "active" : ""}`}
+                onClick={() => {
+                  const next = searchMode === "name" ? "fullText" : "name";
+                  setSearchMode(next);
+                  if (search) loadData(folderId, search, next).catch(() => undefined);
+                }}
+                title={searchMode === "name" ? messages.portfolio.searchFullText : messages.portfolio.searchByName}
+              >
+                {searchMode === "fullText" ? "FT" : "A"}
+              </button>
               <div className="search-input-wrapper">
                 <input
                   autoFocus
                   value={search}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onBlur={() => { if (!search) setSearchOpen(false); }}
-                  placeholder={messages.portfolio.searchPlaceholder}
+                  placeholder={searchMode === "fullText" ? messages.portfolio.searchFullText : messages.portfolio.searchPlaceholder}
                 />
                 {search && (
                   <button type="button" className="search-clear" onClick={clearSearch} aria-label="Clear search">✕</button>
                 )}
               </div>
-              <button type="button" className="search-go" onClick={() => loadData(folderId, search).catch(() => undefined)} disabled={loading}>
+              <button type="button" className="search-go" onClick={() => loadData(folderId, search, searchMode).catch(() => undefined)} disabled={loading}>
                 {loading ? "…" : "↵"}
               </button>
             </div>
@@ -353,6 +389,8 @@ export function PortfolioPage({ config, messages, token, user }: PortfolioPagePr
         )}
       </nav>
 
+      {folderId && <FolderDescription folderId={folderId} />}
+
       {error ? (
         <div className="error-banner" role="alert" aria-live="assertive">
           <span>{error}</span>
@@ -406,6 +444,17 @@ export function PortfolioPage({ config, messages, token, user }: PortfolioPagePr
         }}
         onConfirm={handleCreateFolder}
         onCancel={() => setCreateFolderOpen(false)}
+      />
+
+      <UploadDialog
+        open={uploadOpen}
+        labels={{
+          title: messages.upload.title,
+          close: messages.common.close,
+          uploadLabels: messages.upload,
+        }}
+        onUpload={handleUploadFile}
+        onClose={() => setUploadOpen(false)}
       />
     </section>
   );

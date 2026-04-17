@@ -11,6 +11,8 @@ export function makeDriveItem(overrides: Partial<DriveItem> = {}): DriveItem {
     modifiedTime: "2025-06-01T12:00:00Z",
     parents: ["root"],
     itemType: "file",
+    description: null,
+    location: null,
     ...overrides,
   };
 }

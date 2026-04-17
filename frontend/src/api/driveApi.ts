@@ -6,6 +6,7 @@ interface ListItemsParams {
   pageSize?: number;
   pageToken?: string;
   search?: string;
+  searchMode?: "name" | "fullText";
 }
 
 function toQueryString(params: Record<string, string | undefined>): string {
@@ -36,9 +37,15 @@ export async function listItems(params: ListItemsParams): Promise<DriveItemsResp
     pageSize: params.pageSize ? String(params.pageSize) : undefined,
     pageToken: params.pageToken,
     search: params.search,
+    searchMode: params.searchMode,
   });
 
   return apiRequest<DriveItemsResponse>(`/drive/items${query}`);
+}
+
+export async function getFolderReadme(folderId: string): Promise<string | null> {
+  const result = await apiRequest<{ content: string | null }>(`/drive/folders/${encodeURIComponent(folderId)}/readme`);
+  return result.content;
 }
 
 export async function createFolder(token: string, name: string, parentId?: string): Promise<DriveItem> {

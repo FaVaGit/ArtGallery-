@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { DriveItem } from "../types";
 import { getApiBaseUrl } from "../api/client";
 import { ShareButton } from "./ShareButton";
+import { LocationBadge } from "./LocationBadge";
 
 interface GalleryGridProps {
   items: DriveItem[];
@@ -133,6 +134,9 @@ export function GalleryGrid({ items, labels, shareLabels, selectedId, folderPrev
               </div>
               <p>{isFolder ? labels.folder : labels.file}{isFolder && previews ? ` · ${previews.length} items` : ""}</p>
               <p>{labels.updated}: {formatDate(item.modifiedTime)}</p>
+              {item.location && (
+                <LocationBadge latitude={item.location.latitude} longitude={item.location.longitude} compact />
+              )}
             </div>
           </article>
         );
