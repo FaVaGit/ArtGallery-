@@ -113,6 +113,30 @@ function getDriveClient() {
   return google.drive({ version: "v3", auth });
 }
 
+/**
+ * Returns a Drive client authorised as the real user (via OAuth2 refresh token).
+ * Required for write operations (upload, create folder, copy) because service
+ * accounts have zero storage quota on personal Google accounts.
+ *
+ * Falls back to the service-account client when OAuth2 credentials are not
+ * configured (will work on Shared Drives / Workspace with delegation).
+ */
+function getWriteDriveClient() {
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    // Fall back to service account (works on Shared Drives / Workspace)
+    return getDriveClient();
+  }
+
+  const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
+  oauth2.setCredentials({ refresh_token: refreshToken });
+
+  return google.drive({ version: "v3", auth: oauth2 });
+}
+
 export async function checkDriveConnection(): Promise<{ ok: true }> {
   const drive = getDriveClient();
   await drive.about.get({ fields: "user,storageQuota" });
@@ -176,7 +200,7 @@ export async function createFolder(input: {
   name: string;
   parentId: string;
 }): Promise<DriveItem> {
-  const drive = getDriveClient();
+  const drive = getWriteDriveClient();
 
   const response = await drive.files.create({
     requestBody: {
@@ -237,7 +261,7 @@ export async function copyItem(input: {
   targetParentId: string;
   name?: string;
 }): Promise<DriveItem> {
-  const drive = getDriveClient();
+  const drive = getWriteDriveClient();
 
   const response = await drive.files.copy({
     fileId: input.itemId,
@@ -326,7 +350,7 @@ export async function uploadFile(input: {
   name: string;
   parentId: string;
 }): Promise<DriveItem> {
-  const drive = getDriveClient();
+  const drive = getWriteDriveClient();
 
   const { Readable } = await import("stream");
   const stream = Readable.from(input.buffer);
@@ -343,25 +367,6 @@ export async function uploadFile(input: {
     fields: ITEM_FIELDS,
     supportsAllDrives: true,
   });
-
-  // Transfer ownership to the Drive folder owner so the file counts against
-  // their quota instead of the service account's (which has zero storage).
-  const ownerEmail = process.env.GOOGLE_DRIVE_OWNER_EMAIL;
-  if (ownerEmail && response.data.id) {
-    try {
-      await drive.permissions.create({
-        fileId: response.data.id,
-        transferOwnership: true,
-        requestBody: {
-          role: "owner",
-          type: "user",
-          emailAddress: ownerEmail,
-        },
-      });
-    } catch {
-      // Non-fatal: file was uploaded successfully, ownership transfer is best-effort
-    }
-  }
 
   return mapDriveItem(response.data);
 }
