@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 
 import { ApiError } from "../api/client";
 import type { AppConfig } from "../config/appConfig";
@@ -33,7 +33,12 @@ export function AdminPage({ token, user, messages, config }: AdminPageProps) {
 
   const isAdmin = user?.role === "admin";
 
-  useEffect(() => { setConfigDraft(config); }, [config]);
+  // Sync config prop to local state during render (avoids setState in effect)
+  const prevConfigRef = useRef(config);
+  if (config !== prevConfigRef.current) {
+    prevConfigRef.current = config;
+    setConfigDraft(config);
+  }
 
   /* ── Listen for auth events to clear error ── */
   useEvent("auth:loginFailed", ({ error: msg }) => setError(msg));
