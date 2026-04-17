@@ -27,14 +27,23 @@ export function CreateFolderDialog({
 
   useEffect(() => {
     if (open) {
-      setName("");
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
 
+  const handleCancel = useCallback(() => {
+    setName("");
+    onCancel();
+  }, [onCancel]);
+
+  const handleConfirm = useCallback(() => {
+    onConfirm(name.trim());
+    setName("");
+  }, [onConfirm, name]);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
+      if (e.key === "Escape") handleCancel();
       if (e.key === "Tab" && dialogRef.current) {
         const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
           'button, input, [tabindex]:not([tabindex="-1"])',
@@ -48,7 +57,7 @@ export function CreateFolderDialog({
         }
       }
     },
-    [onCancel],
+    [handleCancel],
   );
 
   useEffect(() => {
@@ -63,7 +72,7 @@ export function CreateFolderDialog({
   const valid = trimmed.length > 0 && trimmed.length <= 100;
 
   return (
-    <div className="confirm-overlay" onClick={onCancel} role="dialog" aria-modal="true" aria-label={labels.title}>
+    <div className="confirm-overlay" onClick={handleCancel} role="dialog" aria-modal="true" aria-label={labels.title}>
       <div className="confirm-dialog" ref={dialogRef} onClick={(e) => e.stopPropagation()}>
         <h3 className="confirm-title">{labels.title}</h3>
 
@@ -74,7 +83,7 @@ export function CreateFolderDialog({
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && valid && !loading) onConfirm(trimmed); }}
+            onKeyDown={(e) => { if (e.key === "Enter" && valid && !loading) handleConfirm(); }}
             placeholder={labels.namePlaceholder}
             maxLength={100}
             disabled={loading}
@@ -82,10 +91,10 @@ export function CreateFolderDialog({
         </label>
 
         <div className="confirm-actions">
-          <button type="button" className="ghost" onClick={onCancel} disabled={loading}>
+          <button type="button" className="ghost" onClick={handleCancel} disabled={loading}>
             {labels.cancel}
           </button>
-          <button type="button" onClick={() => onConfirm(trimmed)} disabled={!valid || loading}>
+          <button type="button" onClick={handleConfirm} disabled={!valid || loading}>
             {loading ? "…" : labels.create}
           </button>
         </div>
