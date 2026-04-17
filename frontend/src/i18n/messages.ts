@@ -45,6 +45,13 @@ interface Messages {
     home: string;
     searchPlaceholder: string;
     itemCount: string;
+    newFolder: string;
+    newFolderTitle: string;
+    folderNameLabel: string;
+    folderNamePlaceholder: string;
+    folderCreated: string;
+    folderCreateError: string;
+    cancel: string;
   };
   filter: {
     typeAll: string;
@@ -207,6 +214,13 @@ const messages: Record<Language, Messages> = {
       home: "Home",
       searchPlaceholder: "Search works…",
       itemCount: "{count} items",
+      newFolder: "New Folder",
+      newFolderTitle: "Create New Folder",
+      folderNameLabel: "Folder name",
+      folderNamePlaceholder: "Enter folder name…",
+      folderCreated: "Folder created successfully",
+      folderCreateError: "Failed to create folder",
+      cancel: "Cancel",
     },
     filter: {
       typeAll: "All",
@@ -365,6 +379,13 @@ const messages: Record<Language, Messages> = {
       home: "Home",
       searchPlaceholder: "Cerca opere…",
       itemCount: "{count} elementi",
+      newFolder: "Nuova Cartella",
+      newFolderTitle: "Crea Nuova Cartella",
+      folderNameLabel: "Nome cartella",
+      folderNamePlaceholder: "Inserisci nome cartella…",
+      folderCreated: "Cartella creata con successo",
+      folderCreateError: "Errore nella creazione della cartella",
+      cancel: "Annulla",
     },
     filter: {
       typeAll: "Tutti",

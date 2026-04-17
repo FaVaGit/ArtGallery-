@@ -151,7 +151,7 @@ function App() {
 
       <main id="main-content">
         <Routes>
-          <Route path="/" element={<PortfolioPage messages={messages} config={config} token={token} />} />
+          <Route path="/" element={<PortfolioPage messages={messages} config={config} token={token} user={user} />} />
           <Route
             path="/admin"
             element={

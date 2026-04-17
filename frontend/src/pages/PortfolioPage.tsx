@@ -3,14 +3,15 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { ApiError } from "../api/client";
 import type { AppConfig } from "../config/appConfig";
 import type { AppMessages } from "../i18n/messages";
-import { getDriveStatus, listItems } from "../api/driveApi";
+import { getDriveStatus, listItems, createFolder } from "../api/driveApi";
 import { trackEvent } from "../api/analyticsApi";
 import { GalleryGrid } from "../components/GalleryGrid";
 import { Lightbox } from "../components/Lightbox";
 import { FilterBar, type FilterState } from "../components/FilterBar";
 import { SkeletonGrid } from "../components/SkeletonCard";
+import { CreateFolderDialog } from "../components/CreateFolderDialog";
 import { eventBus, useEvent } from "../events";
-import type { DriveItem } from "../types";
+import type { DriveItem, AuthUser } from "../types";
 
 const FabricCanvas = lazy(() => import("../components/FabricCanvas").then((m) => ({ default: m.FabricCanvas })));
 
@@ -20,6 +21,7 @@ interface PortfolioPageProps {
   config: AppConfig;
   messages: AppMessages;
   token: string | null;
+  user: AuthUser | null;
 }
 
 function applyClientFilters(items: DriveItem[], filters: FilterState): DriveItem[] {
@@ -44,7 +46,7 @@ function applyClientFilters(items: DriveItem[], filters: FilterState): DriveItem
   return filtered;
 }
 
-export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
+export function PortfolioPage({ config, messages, token, user }: PortfolioPageProps) {
   const [rawItems, setRawItems] = useState<DriveItem[]>([]);
   const [folderId, setFolderId] = useState("");
   const [search, setSearch] = useState("");
@@ -62,6 +64,11 @@ export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ type: "all", sortBy: "name", sortOrder: "asc" });
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [createFolderLoading, setCreateFolderLoading] = useState(false);
+
+  const isAdmin = user?.role === "admin";
 
   const items = applyClientFilters(rawItems, filters);
 
@@ -119,6 +126,23 @@ export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
   function clearSearch() {
     setSearch("");
     loadData(folderId, "").catch(() => undefined);
+  }
+
+  /* ── Create folder (admin) ─────────────────── */
+  async function handleCreateFolder(name: string) {
+    if (!token) return;
+    setCreateFolderLoading(true);
+    try {
+      const parentId = folderId || config.defaultFolderId || undefined;
+      await createFolder(token, name, parentId);
+      eventBus.emit("notify:success", { message: messages.portfolio.folderCreated });
+      setCreateFolderOpen(false);
+      await loadData(folderId, search);
+    } catch {
+      eventBus.emit("notify:error", { message: messages.portfolio.folderCreateError });
+    } finally {
+      setCreateFolderLoading(false);
+    }
   }
 
   /* ── Bootstrap: check drive status + load data ── */
@@ -243,6 +267,15 @@ export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
         </div>
 
         <div className="toolbar-right">
+          {isAdmin && (
+            <button type="button" className="toolbar-icon-btn" onClick={() => setCreateFolderOpen(true)} title={messages.portfolio.newFolder}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                <line x1="12" y1="11" x2="12" y2="17" />
+                <line x1="9" y1="14" x2="15" y2="14" />
+              </svg>
+            </button>
+          )}
           {searchOpen ? (
             <div className="toolbar-search">
               <div className="search-input-wrapper">
@@ -358,6 +391,20 @@ export function PortfolioPage({ config, messages, token }: PortfolioPageProps) {
           onNavigate={(newItem) => setLightboxItem(newItem)}
         />
       )}
+
+      <CreateFolderDialog
+        open={createFolderOpen}
+        loading={createFolderLoading}
+        labels={{
+          title: messages.portfolio.newFolderTitle,
+          nameLabel: messages.portfolio.folderNameLabel,
+          namePlaceholder: messages.portfolio.folderNamePlaceholder,
+          create: messages.portfolio.newFolder,
+          cancel: messages.portfolio.cancel,
+        }}
+        onConfirm={handleCreateFolder}
+        onCancel={() => setCreateFolderOpen(false)}
+      />
     </section>
   );
 }
