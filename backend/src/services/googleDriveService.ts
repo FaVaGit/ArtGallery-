@@ -107,6 +107,7 @@ function getDriveClient() {
     email: credentials.client_email,
     key: credentials.private_key,
     scopes: DRIVE_SCOPES,
+    subject: process.env.GOOGLE_IMPERSONATE_EMAIL || undefined,
   });
 
   return google.drive({ version: "v3", auth });
